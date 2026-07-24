@@ -934,7 +934,7 @@ const OperationCard = forwardRef<HTMLDivElement, OperationCardProps>(
                   ? "bg-status-danger text-status-danger-foreground"
                   : isBottleneck
                     ? "bg-status-warn text-status-warn-foreground"
-                    : "bg-status-ok text-status-status-ok-foreground",
+                    : "bg-status-ok text-status-ok-foreground",
               )}
             >
               {canComplete} / {batchSize} шт.
