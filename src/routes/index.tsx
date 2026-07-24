@@ -610,200 +610,207 @@ interface ComponentCardProps {
   onRemove: () => void;
 }
 
-const ComponentCard = ({
-  component,
-  batchSize,
-  expanded,
-  editMode,
-  onToggleExpand,
-  onUpdateField,
-  onUpdatePosition,
-  onAddPosition,
-  onRemovePosition,
-  onRemove,
-}: ComponentCardProps) => {
-  const isEri = component.type === "eri";
-  const isFixture = component.type === "fixture";
-  const isSemi = component.type === "semi-product";
-  const hasMultiplePositions = component.positions.length > 1;
-  const isExpanded = expanded || hasMultiplePositions || isEri || editMode;
-  const shortages = getShortageForBatch(component, batchSize);
-  const isShortForBatch = shortages.length > 0;
+const ComponentCard = forwardRef<HTMLDivElement, ComponentCardProps>(
+  (
+    {
+      component,
+      batchSize,
+      expanded,
+      editMode,
+      onToggleExpand,
+      onUpdateField,
+      onUpdatePosition,
+      onAddPosition,
+      onRemovePosition,
+      onRemove,
+    },
+    ref,
+  ) => {
+    const isEri = component.type === "eri";
+    const isFixture = component.type === "fixture";
+    const isSemi = component.type === "semi-product";
+    const hasMultiplePositions = component.positions.length > 1;
+    const isExpanded = expanded || hasMultiplePositions || isEri || editMode;
+    const shortages = getShortageForBatch(component, batchSize);
+    const isShortForBatch = shortages.length > 0;
 
-  return (
-    <Card
-      className={cn(
-        "relative border transition-shadow",
-        isShortForBatch && !isSemi && !isFixture && "border-status-warn/60",
-      )}
-    >
-      <CardHeader className="p-3 pb-2">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex-1">
-            {editMode ? (
-              <Input
-                value={component.name}
-                onChange={(e) => onUpdateField("name", e.target.value)}
-                className="h-7 px-1 text-sm font-medium"
-              />
-            ) : (
-              <CardTitle className="text-sm font-medium">{component.name}</CardTitle>
-            )}
-            <div className="mt-1 flex flex-wrap items-center gap-1">
-              <Badge variant="secondary" className={cn("text-xs", COMPONENT_TYPE_COLORS[component.type])}>
-                {COMPONENT_TYPE_LABELS[component.type]}
-              </Badge>
-              {isFixture && (
-                <Badge variant="outline" className="text-xs">
-                  {component.isShared ? "общая" : "на изделие"}
+    return (
+      <Card
+        ref={ref}
+        className={cn(
+          "relative border transition-shadow",
+          isShortForBatch && !isSemi && !isFixture && "border-status-warn/60",
+        )}
+      >
+        <CardHeader className="p-3 pb-2">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1">
+              {editMode ? (
+                <Input
+                  value={component.name}
+                  onChange={(e) => onUpdateField("name", e.target.value)}
+                  className="h-7 px-1 text-sm font-medium"
+                />
+              ) : (
+                <CardTitle className="text-sm font-medium">{component.name}</CardTitle>
+              )}
+              <div className="mt-1 flex flex-wrap items-center gap-1">
+                <Badge variant="secondary" className={cn("text-xs", COMPONENT_TYPE_COLORS[component.type])}>
+                  {COMPONENT_TYPE_LABELS[component.type]}
                 </Badge>
+                {isFixture && (
+                  <Badge variant="outline" className="text-xs">
+                    {component.isShared ? "общая" : "на изделие"}
+                  </Badge>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-1">
+              {hasMultiplePositions && (
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onToggleExpand}>
+                  {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                </Button>
+              )}
+              {editMode && (
+                <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={onRemove}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
               )}
             </div>
           </div>
-          <div className="flex items-center gap-1">
-            {hasMultiplePositions && (
-              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onToggleExpand}>
-                {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-              </Button>
-            )}
-            {editMode && (
-              <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={onRemove}>
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
-        </div>
-      </CardHeader>
+        </CardHeader>
 
-      <CardContent className="space-y-2 p-3 pt-0">
-        {isSemi && (
-          <CardDescription className="text-xs">
-            Продукт этапа «{component.producedByOperationId ? `операция ${component.producedByOperationId}` : "—"}»
-          </CardDescription>
-        )}
+        <CardContent className="space-y-2 p-3 pt-0">
+          {isSemi && (
+            <CardDescription className="text-xs">
+              Продукт этапа «{component.producedByOperationId ? `операция ${component.producedByOperationId}` : "—"}»
+            </CardDescription>
+          )}
 
-        {isFixture && editMode && (
-          <div className="flex items-center gap-2">
-            <Label className="text-xs">Количество</Label>
-            <Input
-              type="number"
-              min={0}
-              value={component.fixtureCount ?? 1}
-              onChange={(e) => onUpdateField("fixtureCount", Math.max(0, Number(e.target.value)))}
-              className="h-7 w-20"
-            />
-            <Switch
-              checked={component.isShared}
-              onCheckedChange={(v) => onUpdateField("isShared", v)}
-            />
-            <Label className="text-xs">Общая</Label>
-          </div>
-        )}
+          {isFixture && editMode && (
+            <div className="flex items-center gap-2">
+              <Label className="text-xs">Количество</Label>
+              <Input
+                type="number"
+                min={0}
+                value={component.fixtureCount ?? 1}
+                onChange={(e) => onUpdateField("fixtureCount", Math.max(0, Number(e.target.value)))}
+                className="h-7 w-20"
+              />
+              <Switch
+                checked={component.isShared}
+                onCheckedChange={(v) => onUpdateField("isShared", v)}
+              />
+              <Label className="text-xs">Общая</Label>
+            </div>
+          )}
 
-        {!isFixture && !isSemi && (
-          <div className="space-y-2">
-            {(isExpanded || component.positions.length <= 1) && (
-              <>
-                {component.positions.map((position) => (
-                  <div
-                    key={position.id}
-                    className={cn(
-                      "rounded-md border p-2 text-xs",
-                      position.stock < position.quantityPerUnit * batchSize
-                        ? "border-status-warn/40 bg-status-warn/5"
-                        : "border-border bg-background",
-                    )}
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      {editMode ? (
-                        <Input
-                          value={position.name}
-                          onChange={(e) => onUpdatePosition(position.id, { name: e.target.value })}
-                          className="h-6 px-1 text-xs"
-                        />
-                      ) : (
-                        <span className="font-medium">{position.name}</span>
+          {!isFixture && !isSemi && (
+            <div className="space-y-2">
+              {(isExpanded || component.positions.length <= 1) && (
+                <>
+                  {component.positions.map((position) => (
+                    <div
+                      key={position.id}
+                      className={cn(
+                        "rounded-md border p-2 text-xs",
+                        position.stock < position.quantityPerUnit * batchSize
+                          ? "border-status-warn/40 bg-status-warn/5"
+                          : "border-border bg-background",
                       )}
-                      {editMode && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-5 w-5 text-destructive"
-                          onClick={() => onRemovePosition(position.id)}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        {editMode ? (
+                          <Input
+                            value={position.name}
+                            onChange={(e) => onUpdatePosition(position.id, { name: e.target.value })}
+                            className="h-6 px-1 text-xs"
+                          />
+                        ) : (
+                          <span className="font-medium">{position.name}</span>
+                        )}
+                        {editMode && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-5 w-5 text-destructive"
+                            onClick={() => onRemovePosition(position.id)}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        )}
+                      </div>
+                      <div className="mt-2 grid grid-cols-3 gap-1">
+                        <div>
+                          <Label className="text-[10px] text-muted-foreground">Норма</Label>
+                          <Input
+                            type="number"
+                            min={0}
+                            step="0.001"
+                            value={position.quantityPerUnit}
+                            onChange={(e) =>
+                              onUpdatePosition(position.id, { quantityPerUnit: Number(e.target.value) })
+                            }
+                            className="h-6 px-1 text-xs"
+                            disabled={!editMode}
+                            readOnly={!editMode}
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-[10px] text-muted-foreground">Остаток</Label>
+                          <Input
+                            type="number"
+                            min={0}
+                            value={position.stock}
+                            onChange={(e) => onUpdatePosition(position.id, { stock: Number(e.target.value) })}
+                            className={cn(
+                              "h-6 px-1 text-xs",
+                              position.stock < position.quantityPerUnit * batchSize && "border-status-warn",
+                            )}
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-[10px] text-muted-foreground">Срок поставки</Label>
+                          <Input
+                            type="number"
+                            min={0}
+                            value={position.leadTimeDays}
+                            onChange={(e) =>
+                              onUpdatePosition(position.id, { leadTimeDays: Number(e.target.value) })
+                            }
+                            className="h-6 px-1 text-xs"
+                            disabled={!editMode}
+                            readOnly={!editMode}
+                          />
+                        </div>
+                      </div>
+                      {!editMode && position.leadTimeDays > 0 && (
+                        <div className="mt-1 text-[10px] text-muted-foreground">поставка: {position.leadTimeDays} дн.</div>
                       )}
                     </div>
-                    <div className="mt-2 grid grid-cols-3 gap-1">
-                      <div>
-                        <Label className="text-[10px] text-muted-foreground">Норма</Label>
-                        <Input
-                          type="number"
-                          min={0}
-                          step="0.001"
-                          value={position.quantityPerUnit}
-                          onChange={(e) =>
-                            onUpdatePosition(position.id, { quantityPerUnit: Number(e.target.value) })
-                          }
-                          className="h-6 px-1 text-xs"
-                          disabled={!editMode}
-                          readOnly={!editMode}
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-[10px] text-muted-foreground">Остаток</Label>
-                        <Input
-                          type="number"
-                          min={0}
-                          value={position.stock}
-                          onChange={(e) => onUpdatePosition(position.id, { stock: Number(e.target.value) })}
-                          className={cn(
-                            "h-6 px-1 text-xs",
-                            position.stock < position.quantityPerUnit * batchSize && "border-status-warn",
-                          )}
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-[10px] text-muted-foreground">Срок поставки</Label>
-                        <Input
-                          type="number"
-                          min={0}
-                          value={position.leadTimeDays}
-                          onChange={(e) =>
-                            onUpdatePosition(position.id, { leadTimeDays: Number(e.target.value) })
-                          }
-                          className="h-6 px-1 text-xs"
-                          disabled={!editMode}
-                          readOnly={!editMode}
-                        />
-                      </div>
-                    </div>
-                    {!editMode && position.leadTimeDays > 0 && (
-                      <div className="mt-1 text-[10px] text-muted-foreground">поставка: {position.leadTimeDays} дн.</div>
-                    )}
-                  </div>
-                ))}
-              </>
-            )}
-            {editMode && (
-              <Button variant="ghost" size="sm" className="h-7 w-full text-xs" onClick={onAddPosition}>
-                <Plus className="mr-1 h-3 w-3" />
-                Добавить позицию
-              </Button>
-            )}
-            {!editMode && isShortForBatch && (
-              <div className="text-xs text-status-warn">
-                <AlertTriangle className="mr-1 inline h-3 w-3" />
-                Не хватает для {batchSize} шт.
-              </div>
-            )}
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-};
+                  ))}
+                </>
+              )}
+              {editMode && (
+                <Button variant="ghost" size="sm" className="h-7 w-full text-xs" onClick={onAddPosition}>
+                  <Plus className="mr-1 h-3 w-3" />
+                  Добавить позицию
+                </Button>
+              )}
+              {!editMode && isShortForBatch && (
+                <div className="text-xs text-status-warn">
+                  <AlertTriangle className="mr-1 inline h-3 w-3" />
+                  Не хватает для {batchSize} шт.
+                </div>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    );
+  },
+);
+ComponentCard.displayName = "ComponentCard";
 
 interface OperationCardProps {
   operation: Operation;
@@ -820,167 +827,173 @@ interface OperationCardProps {
   onRemove: () => void;
 }
 
-const OperationCard = ({
-  operation,
-  result,
-  batchSize,
-  editMode,
-  allComponents,
-  isFirst,
-  isLast,
-  onUpdateField,
-  onToggleInput,
-  onMoveUp,
-  onMoveDown,
-  onRemove,
-}: OperationCardProps) => {
-  const canComplete = result?.canCompleteUnits ?? 0;
-  const isLimited = canComplete < batchSize;
-  const isBlocked = canComplete === 0;
-  const isBottleneck = !!result && canComplete < batchSize;
+const OperationCard = forwardRef<HTMLDivElement, OperationCardProps>(
+  (
+    {
+      operation,
+      result,
+      batchSize,
+      editMode,
+      allComponents,
+      isFirst,
+      isLast,
+      onUpdateField,
+      onToggleInput,
+      onMoveUp,
+      onMoveDown,
+      onRemove,
+    },
+    ref,
+  ) => {
+    const canComplete = result?.canCompleteUnits ?? 0;
+    const isBlocked = canComplete === 0;
+    const isBottleneck = !!result && canComplete < batchSize;
 
-  const availableInputComponents = allComponents.filter(
-    (c) => c.type !== "semi-product" || operation.inputComponentIds.includes(c.id),
-  );
+    const availableInputComponents = allComponents.filter(
+      (c) => c.type !== "semi-product" || operation.inputComponentIds.includes(c.id),
+    );
 
-  return (
-    <Card
-      className={cn(
-        "relative z-10 w-64 flex-shrink-0 border-2 transition-colors",
-        isBlocked
-          ? "border-status-danger/60 bg-status-danger/5"
-          : isBottleneck
-            ? "border-status-warn/60 bg-status-warn/5"
-            : "border-border bg-card",
-      )}
-    >
-      <CardHeader className="p-3 pb-2">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex-1">
+    return (
+      <Card
+        ref={ref}
+        className={cn(
+          "relative z-10 w-64 flex-shrink-0 border-2 transition-colors",
+          isBlocked
+            ? "border-status-danger/60 bg-status-danger/5"
+            : isBottleneck
+              ? "border-status-warn/60 bg-status-warn/5"
+              : "border-border bg-card",
+        )}
+      >
+        <CardHeader className="p-3 pb-2">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1">
+              {editMode ? (
+                <Input
+                  value={operation.name}
+                  onChange={(e) => onUpdateField("name", e.target.value)}
+                  className="h-7 px-1 text-sm font-medium"
+                />
+              ) : (
+                <CardTitle className="text-sm font-medium">{operation.name}</CardTitle>
+              )}
+            </div>
+            {editMode && (
+              <div className="flex items-center gap-1">
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onMoveUp} disabled={isFirst}>
+                  <ArrowUp className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onMoveDown} disabled={isLast}>
+                  <ArrowDown className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={onRemove}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </div>
+
+          <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+            <UserCircle className="h-3 w-3" />
             {editMode ? (
               <Input
-                value={operation.name}
-                onChange={(e) => onUpdateField("name", e.target.value)}
-                className="h-7 px-1 text-sm font-medium"
+                value={operation.responsible}
+                onChange={(e) => onUpdateField("responsible", e.target.value)}
+                className="h-6 px-1 text-xs"
+                placeholder="Ответственный"
               />
             ) : (
-              <CardTitle className="text-sm font-medium">{operation.name}</CardTitle>
+              <span>{operation.responsible || "—"}</span>
             )}
           </div>
+
+          <div className="mt-1 flex items-center gap-2 text-xs">
+            <Clock className="h-3 w-3 text-muted-foreground" />
+            {editMode ? (
+              <Input
+                type="number"
+                min={0}
+                step="0.5"
+                value={operation.durationHours}
+                onChange={(e) => onUpdateField("durationHours", Number(e.target.value))}
+                className="h-6 w-20 px-1 text-xs"
+              />
+            ) : (
+              <span>{operation.durationHours} ч</span>
+            )}
+          </div>
+        </CardHeader>
+
+        <CardContent className="p-3 pt-0">
+          <div className="mb-2 flex items-center justify-between">
+            <Badge
+              variant="secondary"
+              className={cn(
+                "text-xs",
+                isBlocked
+                  ? "bg-status-danger text-status-danger-foreground"
+                  : isBottleneck
+                    ? "bg-status-warn text-status-warn-foreground"
+                    : "bg-status-ok text-status-status-ok-foreground",
+              )}
+            >
+              {canComplete} / {batchSize} шт.
+            </Badge>
+            {result && (
+              <span className="text-xs text-muted-foreground">
+                {result.limitedBy.type === "component" ? "материал" : "предыдущий этап"}
+              </span>
+            )}
+          </div>
+
           {editMode && (
-            <div className="flex items-center gap-1">
-              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onMoveUp} disabled={isFirst}>
-                <ArrowUp className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onMoveDown} disabled={isLast}>
-                <ArrowDown className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={onRemove}>
-                <Trash2 className="h-4 w-4" />
-              </Button>
+            <div className="space-y-2">
+              <div className="text-xs font-medium text-muted-foreground">Входные компоненты:</div>
+              <div className="max-h-48 space-y-1 overflow-y-auto">
+                {availableInputComponents.map((component) => {
+                  const checked = operation.inputComponentIds.includes(component.id);
+                  return (
+                    <label
+                      key={component.id}
+                      className="flex cursor-pointer items-center gap-2 rounded-md border border-border p-1.5 hover:bg-accent"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => onToggleInput(component.id)}
+                        className="h-3.5 w-3.5 rounded border-border text-primary"
+                      />
+                      <span className="text-xs">{component.name}</span>
+                      <Badge variant="outline" className="ml-auto text-[10px]">
+                        {COMPONENT_TYPE_LABELS[component.type]}
+                      </Badge>
+                    </label>
+                  );
+                })}
+              </div>
+
+              <div>
+                <Label className="text-xs text-muted-foreground">Продукт этапа</Label>
+                <select
+                  value={operation.outputComponentId ?? ""}
+                  onChange={(e) => onUpdateField("outputComponentId", e.target.value || null)}
+                  className="mt-1 w-full rounded-md border border-input bg-background px-2 py-1 text-xs"
+                >
+                  <option value="">Нет (продолжение предыдущего)</option>
+                  {allComponents
+                    .filter((c) => c.type === "semi-product")
+                    .map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                </select>
+              </div>
             </div>
           )}
-        </div>
-
-        <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-          <UserCircle className="h-3 w-3" />
-          {editMode ? (
-            <Input
-              value={operation.responsible}
-              onChange={(e) => onUpdateField("responsible", e.target.value)}
-              className="h-6 px-1 text-xs"
-              placeholder="Ответственный"
-            />
-          ) : (
-            <span>{operation.responsible || "—"}</span>
-          )}
-        </div>
-
-        <div className="mt-1 flex items-center gap-2 text-xs">
-          <Clock className="h-3 w-3 text-muted-foreground" />
-          {editMode ? (
-            <Input
-              type="number"
-              min={0}
-              step="0.5"
-              value={operation.durationHours}
-              onChange={(e) => onUpdateField("durationHours", Number(e.target.value))}
-              className="h-6 w-20 px-1 text-xs"
-            />
-          ) : (
-            <span>{operation.durationHours} ч</span>
-          )}
-        </div>
-      </CardHeader>
-
-      <CardContent className="p-3 pt-0">
-        <div className="mb-2 flex items-center justify-between">
-          <Badge
-            variant="secondary"
-            className={cn(
-              "text-xs",
-              isBlocked
-                ? "bg-status-danger text-status-danger-foreground"
-                : isBottleneck
-                  ? "bg-status-warn text-status-warn-foreground"
-                  : "bg-status-ok text-status-ok-foreground",
-            )}
-          >
-            {canComplete} / {batchSize} шт.
-          </Badge>
-          {result && (
-            <span className="text-xs text-muted-foreground">
-              {result.limitedBy.type === "component" ? "материал" : "предыдущий этап"}
-            </span>
-          )}
-        </div>
-
-        {editMode && (
-          <div className="space-y-2">
-            <div className="text-xs font-medium text-muted-foreground">Входные компоненты:</div>
-            <div className="max-h-48 space-y-1 overflow-y-auto">
-              {availableInputComponents.map((component) => {
-                const checked = operation.inputComponentIds.includes(component.id);
-                return (
-                  <label
-                    key={component.id}
-                    className="flex cursor-pointer items-center gap-2 rounded-md border border-border p-1.5 hover:bg-accent"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={() => onToggleInput(component.id)}
-                      className="h-3.5 w-3.5 rounded border-border text-primary"
-                    />
-                    <span className="text-xs">{component.name}</span>
-                    <Badge variant="outline" className="ml-auto text-[10px]">
-                      {COMPONENT_TYPE_LABELS[component.type]}
-                    </Badge>
-                  </label>
-                );
-              })}
-            </div>
-
-            <div>
-              <Label className="text-xs text-muted-foreground">Продукт этапа</Label>
-              <select
-                value={operation.outputComponentId ?? ""}
-                onChange={(e) => onUpdateField("outputComponentId", e.target.value || null)}
-                className="mt-1 w-full rounded-md border border-input bg-background px-2 py-1 text-xs"
-              >
-                <option value="">Нет (продолжение предыдущего)</option>
-                {allComponents
-                  .filter((c) => c.type === "semi-product")
-                  .map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-              </select>
-            </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-};
+        </CardContent>
+      </Card>
+    );
+  },
+);
+OperationCard.displayName = "OperationCard";
