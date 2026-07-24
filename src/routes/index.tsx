@@ -6,6 +6,7 @@ import {
   useMemo,
   useCallback,
   useId,
+  forwardRef,
   type ChangeEvent,
   type MouseEvent,
 } from "react";
