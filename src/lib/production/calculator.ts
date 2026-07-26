@@ -8,12 +8,11 @@ import type {
   Summary,
 } from "./types";
 
-/** Available "units" of a component (materials/ERI: stock/quantityPerUnit; fixtures: unlimited when shared; semi-products handled by upstream op). */
+/** Available "units" of a component. */
 function componentUnitsAvailable(component: ComponentGroup): number {
   if (component.type === "semi-product") return Infinity;
   if (component.type === "fixture") {
-    if (component.isShared) return Infinity;
-    return component.fixtureCount ?? 0;
+    return (component.fixtureCount ?? 0) > 0 ? Infinity : 0;
   }
   let min = Infinity;
   for (const p of component.positions) {
@@ -36,15 +35,13 @@ export function computeSummary(product: Product): Summary {
   const opById = new Map(operations.map((o) => [o.id, o]));
   const sorted = [...operations].sort((a, b) => a.order - b.order);
 
-  // Available "flow units" for each semi-product = completedUnits of producing operation minus consumption by ops that consume it (we approximate: cap at producer.completed).
-  // For simplicity: semi-product availability at any op = producer.completed - completedUnits of THIS op (assumes linear chain).
   const computedList: OperationComputed[] = [];
-  const computedById = new Map<string, OperationComputed>();
 
   for (const op of sorted) {
     const shortages: OperationShortage[] = [];
     const requirements: OperationComputed["requirements"] = [];
-    let capacity = batchSize - op.completedUnits;
+    const remainingNeed = batchSize - op.completedUnits;
+    let capacity = remainingNeed;
     let waitingFor: OperationComputed["waitingFor"];
 
     for (const cid of op.inputComponentIds) {
@@ -53,6 +50,7 @@ export function computeSummary(product: Product): Summary {
 
       let available: number;
       let required = batchSize;
+
       if (c.type === "semi-product") {
         const producerId = c.producedByOperationId;
         const producer = producerId ? opById.get(producerId) : undefined;
@@ -70,21 +68,22 @@ export function computeSummary(product: Product): Summary {
           }
         }
       } else if (c.type === "fixture") {
-        available = c.isShared ? Infinity : c.fixtureCount ?? 0;
-        required = c.isShared ? 1 : batchSize;
-        if (!c.isShared && available < capacity) {
-          capacity = available;
+        const count = c.fixtureCount ?? 0;
+        available = count > 0 ? Infinity : 0;
+        required = 1;
+        if (available === 0) {
+          capacity = 0;
           shortages.push({
             componentId: c.id,
             componentName: c.name,
-            required,
-            available,
+            required: 1,
+            available: 0,
             leadTimeDays: 0,
           });
         }
       } else {
         available = componentUnitsAvailable(c);
-        const remainingNeed = batchSize - op.completedUnits;
+        required = remainingNeed;
         if (available < remainingNeed) {
           if (available < capacity) capacity = available;
           shortages.push({
@@ -97,37 +96,43 @@ export function computeSummary(product: Product): Summary {
         }
       }
 
+      const reqValueForOk = c.type === "fixture" ? 1 : remainingNeed;
       requirements.push({
         componentId: c.id,
         componentName: c.name,
         type: c.type,
-        required: c.type === "fixture" && c.isShared ? 1 : batchSize,
+        required: c.type === "fixture" ? 1 : batchSize,
         available: available === Infinity ? Number.POSITIVE_INFINITY : available,
-        ok: available >= (c.type === "fixture" && c.isShared ? 1 : batchSize - op.completedUnits),
+        ok: available >= reqValueForOk,
       });
     }
 
     capacity = Math.max(0, capacity);
 
+    // Status semantics:
+    //  done    — партия выполнена
+    //  blocked — есть собственная нехватка (даже если и upstream мешает)
+    //  waiting — только ждёт предыдущую операцию
+    //  running — идёт и можно продолжать
+    //  ready   — не начата, но можно запускать
     let status: OperationVisualStatus;
     let reason: string;
     const completed = op.completedUnits;
-    const remaining = batchSize - completed;
 
     if (completed >= batchSize) {
       status = "done";
       reason = "Партия по этой операции завершена";
-    } else if (completed > 0 && capacity > 0) {
-      status = "running";
-      reason = `Выполняется, можно продолжить на ${capacity} шт`;
-    } else if (capacity === 0 && shortages.length > 0) {
+    } else if (shortages.length > 0) {
       status = "blocked";
       const s = shortages[0];
       reason = `Не хватает: ${s.componentName} (${s.available}/${s.required})`;
     } else if (capacity === 0 && waitingFor) {
       status = "waiting";
       reason = `Ждёт: ${waitingFor.operationName}`;
-    } else if (capacity > 0 && completed === 0) {
+    } else if (completed > 0 && capacity > 0) {
+      status = "running";
+      reason = `Выполняется, можно продолжить на ${capacity} шт`;
+    } else if (capacity > 0) {
       status = "ready";
       reason = `Готова к запуску, можно ${capacity} шт`;
     } else {
@@ -135,33 +140,20 @@ export function computeSummary(product: Product): Summary {
       reason = "Ожидание";
     }
 
-    const c: OperationComputed = {
+    computedList.push({
       operationId: op.id,
       completed,
       canPerformNow: capacity,
-      remaining,
+      remaining: batchSize - completed,
       status,
       reason,
       shortages,
       waitingFor,
       requirements,
-    };
-    computedList.push(c);
-    computedById.set(op.id, c);
+    });
   }
 
-  // Mark "next" — first non-blocked, non-done operation after a blocker
-  const blockers = computedList.filter((c) => c.status === "blocked");
-  if (blockers.length > 0) {
-    for (const c of computedList) {
-      if (c.status === "waiting" || c.status === "ready") {
-        c.status = "next";
-        break;
-      }
-    }
-  }
-
-  // Equipped = min consumable component units available (materials + eri) across the whole product
+  // «Укомплектовано» = min по всем расходуемым компонентам (materials + eri).
   let equipped = Infinity;
   for (const c of components) {
     if (c.type === "semi-product" || c.type === "fixture") continue;
