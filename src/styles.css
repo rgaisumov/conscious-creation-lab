@@ -125,6 +125,12 @@
   --status-danger-foreground: oklch(0.98 0.005 25);
   --status-info: oklch(0.62 0.19 256);
   --status-info-foreground: oklch(0.98 0.005 256);
+  --status-block: oklch(0.6 0.24 25);
+  --status-next: oklch(0.72 0.18 55);
+  --status-wait: oklch(0.82 0.16 90);
+  --status-ready: oklch(0.9 0.02 250);
+  --status-run: oklch(0.62 0.19 240);
+  --status-done: oklch(0.62 0.16 150);
 
   /* Custom surfaces */
   --surface: oklch(0.97 0.005 250);
