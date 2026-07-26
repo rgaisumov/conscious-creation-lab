@@ -13,10 +13,8 @@ export interface ComponentGroup {
   name: string;
   type: ComponentType;
   positions: Position[];
-  // Fixture-specific: shared means one for the whole batch; otherwise one per unit.
   isShared?: boolean;
   fixtureCount?: number;
-  // For semi-products: which operation produces this component
   producedByOperationId?: string | null;
 }
 
@@ -28,39 +26,64 @@ export interface Operation {
   order: number;
   inputComponentIds: string[];
   outputComponentId: string | null;
+  completedUnits: number;
+  note?: string;
 }
 
 export interface Product {
   id: string;
   name: string;
+  batchSize: number;
+  shippedUnits: number;
+  assembledOperationId?: string;
+  testedOperationId?: string;
   components: ComponentGroup[];
   operations: Operation[];
 }
 
-export interface LimitingFactor {
-  type: "component" | "previous-operation";
-  id: string;
-  name: string;
-  availableUnits: number;
-}
+export type OperationVisualStatus =
+  | "done"
+  | "running"
+  | "ready"
+  | "waiting"
+  | "next"
+  | "blocked";
 
-export interface OperationResult {
-  operationId: string;
-  canCompleteUnits: number;
-  limitedBy: LimitingFactor;
-}
-
-export interface CalculationSummary {
-  batchSize: number;
-  canStartNow: number;
-  globalBottleneck: LimitingFactor;
-  operationResults: OperationResult[];
-  fullBatchAvailabilityDays: number;
-  estimatedCompletionDays: number;
-}
-
-export interface ComponentAvailability {
+export interface OperationShortage {
   componentId: string;
-  maxUnits: number;
-  limitingPosition: Position | null;
+  componentName: string;
+  required: number;
+  available: number;
+  leadTimeDays: number;
+}
+
+export interface OperationComputed {
+  operationId: string;
+  completed: number;
+  canPerformNow: number;
+  remaining: number;
+  status: OperationVisualStatus;
+  reason: string;
+  shortages: OperationShortage[];
+  waitingFor?: { operationId: string; operationName: string; missing: number };
+  requirements: {
+    componentId: string;
+    componentName: string;
+    type: ComponentType;
+    required: number;
+    available: number;
+    ok: boolean;
+  }[];
+}
+
+export interface Summary {
+  batchSize: number;
+  equipped: number;
+  assembled: number;
+  tested: number;
+  shipped: number;
+  blockers: { operationId: string; operationName: string; reason: string }[];
+  operations: OperationComputed[];
+  fullBatchLeadDays: number;
+  totalProductionDays: number;
 }
