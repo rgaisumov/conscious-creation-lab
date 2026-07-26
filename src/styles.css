@@ -68,6 +68,12 @@
   --color-status-danger: var(--status-danger);
   --color-status-danger-foreground: var(--status-danger-foreground);
   --color-status-info: var(--status-info);
+  --color-status-block: var(--status-block);
+  --color-status-next: var(--status-next);
+  --color-status-wait: var(--status-wait);
+  --color-status-ready: var(--status-ready);
+  --color-status-run: var(--status-run);
+  --color-status-done: var(--status-done);
   --color-status-info-foreground: var(--status-info-foreground);
 
   /* Custom surface tokens */

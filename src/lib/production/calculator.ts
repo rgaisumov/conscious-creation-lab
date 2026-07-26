@@ -1,175 +1,212 @@
 import type {
   ComponentGroup,
-  ComponentAvailability,
-  LimitingFactor,
-  OperationResult,
-  CalculationSummary,
+  Operation,
+  OperationComputed,
+  OperationShortage,
+  OperationVisualStatus,
   Product,
-  Position,
+  Summary,
 } from "./types";
 
-export function computeComponentAvailability(
-  component: ComponentGroup,
-  batchSize: number,
-): ComponentAvailability {
-  // Semi-products: availability is computed by their producing operation, not stock
-  if (component.type === "semi-product") {
-    return {
-      componentId: component.id,
-      maxUnits: Infinity,
-      limitingPosition: null,
-    };
+/** Available "units" of a component (materials/ERI: stock/quantityPerUnit; fixtures: unlimited when shared; semi-products handled by upstream op). */
+function componentUnitsAvailable(component: ComponentGroup): number {
+  if (component.type === "semi-product") return Infinity;
+  if (component.type === "fixture") {
+    if (component.isShared) return Infinity;
+    return component.fixtureCount ?? 0;
   }
-
-  // Shared fixtures do not limit how many units can be produced, only parallelism
-  if (component.type === "fixture" && component.isShared) {
-    return {
-      componentId: component.id,
-      maxUnits: Infinity,
-      limitingPosition: null,
-    };
+  let min = Infinity;
+  for (const p of component.positions) {
+    if (p.quantityPerUnit <= 0) continue;
+    const av = Math.floor(p.stock / p.quantityPerUnit);
+    if (av < min) min = av;
   }
-
-  // Per-unit fixtures: limited by fixture count
-  if (component.type === "fixture" && !component.isShared) {
-    const maxUnits = component.fixtureCount ?? 0;
-    return {
-      componentId: component.id,
-      maxUnits,
-      limitingPosition: null,
-    };
-  }
-
-  // Materials / ERI groups: limited by stock vs. quantity per unit
-  let limitingPosition: Position | null = null;
-  let maxUnits = Infinity;
-
-  for (const position of component.positions) {
-    if (position.quantityPerUnit <= 0) continue;
-    const available = Math.floor(position.stock / position.quantityPerUnit);
-    if (available < maxUnits) {
-      maxUnits = available;
-      limitingPosition = position;
-    }
-  }
-
-  if (maxUnits === Infinity) {
-    maxUnits = 0;
-  }
-
-  return {
-    componentId: component.id,
-    maxUnits,
-    limitingPosition,
-  };
+  return min === Infinity ? 0 : min;
 }
 
-export function computeProductCalculations(
-  product: Product,
-  batchSize: number,
-): CalculationSummary {
-  const availability = new Map<string, ComponentAvailability>();
-  for (const component of product.components) {
-    availability.set(component.id, computeComponentAvailability(component, batchSize));
-  }
+function maxLeadTime(component: ComponentGroup): number {
+  let m = 0;
+  for (const p of component.positions) if (p.leadTimeDays > m) m = p.leadTimeDays;
+  return m;
+}
 
-  const sortedOperations = [...product.operations].sort((a, b) => a.order - b.order);
-  const operationResults: OperationResult[] = [];
+export function computeSummary(product: Product): Summary {
+  const { batchSize, operations, components } = product;
+  const compById = new Map(components.map((c) => [c.id, c]));
+  const opById = new Map(operations.map((o) => [o.id, o]));
+  const sorted = [...operations].sort((a, b) => a.order - b.order);
 
-  let previousMaxUnits = Infinity;
-  let previousOperationName = "Начало";
+  // Available "flow units" for each semi-product = completedUnits of producing operation minus consumption by ops that consume it (we approximate: cap at producer.completed).
+  // For simplicity: semi-product availability at any op = producer.completed - completedUnits of THIS op (assumes linear chain).
+  const computedList: OperationComputed[] = [];
+  const computedById = new Map<string, OperationComputed>();
 
-  for (const operation of sortedOperations) {
-    let canCompleteUnits = previousMaxUnits;
-    let limitedBy: LimitingFactor = {
-      type: "previous-operation",
-      id: "start",
-      name: previousOperationName,
-      availableUnits: previousMaxUnits,
+  for (const op of sorted) {
+    const shortages: OperationShortage[] = [];
+    const requirements: OperationComputed["requirements"] = [];
+    let capacity = batchSize - op.completedUnits;
+    let waitingFor: OperationComputed["waitingFor"];
+
+    for (const cid of op.inputComponentIds) {
+      const c = compById.get(cid);
+      if (!c) continue;
+
+      let available: number;
+      let required = batchSize;
+      if (c.type === "semi-product") {
+        const producerId = c.producedByOperationId;
+        const producer = producerId ? opById.get(producerId) : undefined;
+        const producerDone = producer ? producer.completedUnits : 0;
+        available = producerDone - op.completedUnits;
+        required = batchSize;
+        if (available < capacity) {
+          capacity = Math.max(0, available);
+          if (producer) {
+            waitingFor = {
+              operationId: producer.id,
+              operationName: producer.name,
+              missing: Math.max(0, op.completedUnits + 1 - producerDone),
+            };
+          }
+        }
+      } else if (c.type === "fixture") {
+        available = c.isShared ? Infinity : c.fixtureCount ?? 0;
+        required = c.isShared ? 1 : batchSize;
+        if (!c.isShared && available < capacity) {
+          capacity = available;
+          shortages.push({
+            componentId: c.id,
+            componentName: c.name,
+            required,
+            available,
+            leadTimeDays: 0,
+          });
+        }
+      } else {
+        available = componentUnitsAvailable(c);
+        const remainingNeed = batchSize - op.completedUnits;
+        if (available < remainingNeed) {
+          if (available < capacity) capacity = available;
+          shortages.push({
+            componentId: c.id,
+            componentName: c.name,
+            required: remainingNeed,
+            available,
+            leadTimeDays: maxLeadTime(c),
+          });
+        }
+      }
+
+      requirements.push({
+        componentId: c.id,
+        componentName: c.name,
+        type: c.type,
+        required: c.type === "fixture" && c.isShared ? 1 : batchSize,
+        available: available === Infinity ? Number.POSITIVE_INFINITY : available,
+        ok: available >= (c.type === "fixture" && c.isShared ? 1 : batchSize - op.completedUnits),
+      });
+    }
+
+    capacity = Math.max(0, capacity);
+
+    let status: OperationVisualStatus;
+    let reason: string;
+    const completed = op.completedUnits;
+    const remaining = batchSize - completed;
+
+    if (completed >= batchSize) {
+      status = "done";
+      reason = "Партия по этой операции завершена";
+    } else if (completed > 0 && capacity > 0) {
+      status = "running";
+      reason = `Выполняется, можно продолжить на ${capacity} шт`;
+    } else if (capacity === 0 && shortages.length > 0) {
+      status = "blocked";
+      const s = shortages[0];
+      reason = `Не хватает: ${s.componentName} (${s.available}/${s.required})`;
+    } else if (capacity === 0 && waitingFor) {
+      status = "waiting";
+      reason = `Ждёт: ${waitingFor.operationName}`;
+    } else if (capacity > 0 && completed === 0) {
+      status = "ready";
+      reason = `Готова к запуску, можно ${capacity} шт`;
+    } else {
+      status = "waiting";
+      reason = "Ожидание";
+    }
+
+    const c: OperationComputed = {
+      operationId: op.id,
+      completed,
+      canPerformNow: capacity,
+      remaining,
+      status,
+      reason,
+      shortages,
+      waitingFor,
+      requirements,
     };
-
-    for (const componentId of operation.inputComponentIds) {
-      const avail = availability.get(componentId);
-      if (!avail) continue;
-      if (avail.maxUnits < canCompleteUnits) {
-        canCompleteUnits = avail.maxUnits;
-        const component = product.components.find((c) => c.id === componentId);
-        limitedBy = {
-          type: "component",
-          id: componentId,
-          name: component?.name ?? componentId,
-          availableUnits: avail.maxUnits,
-        };
-      }
-    }
-
-    // Output of previous operation is an implicit input for this operation
-    if (previousMaxUnits < canCompleteUnits) {
-      canCompleteUnits = previousMaxUnits;
-      limitedBy = {
-        type: "previous-operation",
-        id: previousOperationName === "Начало" ? "start" : operation.id,
-        name: previousOperationName,
-        availableUnits: previousMaxUnits,
-      };
-    }
-
-    operationResults.push({
-      operationId: operation.id,
-      canCompleteUnits,
-      limitedBy,
-    });
-
-    previousMaxUnits = canCompleteUnits;
-    previousOperationName = operation.name;
+    computedList.push(c);
+    computedById.set(op.id, c);
   }
 
-  const canStartNow =
-    operationResults.length > 0 ? operationResults[0].canCompleteUnits : 0;
-  const globalBottleneck =
-    operationResults.length > 0
-      ? operationResults[operationResults.length - 1].limitedBy
-      : { type: "component" as const, id: "none", name: "—", availableUnits: 0 };
-
-  // Full batch availability: max lead time among components that are short for the full batch
-  let fullBatchAvailabilityDays = 0;
-  for (const component of product.components) {
-    if (component.type === "semi-product" || component.type === "fixture") continue;
-    for (const position of component.positions) {
-      const required = position.quantityPerUnit * batchSize;
-      if (required > position.stock && position.leadTimeDays > fullBatchAvailabilityDays) {
-        fullBatchAvailabilityDays = position.leadTimeDays;
+  // Mark "next" — first non-blocked, non-done operation after a blocker
+  const blockers = computedList.filter((c) => c.status === "blocked");
+  if (blockers.length > 0) {
+    for (const c of computedList) {
+      if (c.status === "waiting" || c.status === "ready") {
+        c.status = "next";
+        break;
       }
     }
   }
 
-  // Estimated completion days: full batch availability + sum of operation durations converted to days
-  const totalProductionDays = sortedOperations.reduce(
-    (sum, op) => sum + op.durationHours / 24,
-    0,
-  );
-  const estimatedCompletionDays = fullBatchAvailabilityDays + totalProductionDays;
+  // Equipped = min consumable component units available (materials + eri) across the whole product
+  let equipped = Infinity;
+  for (const c of components) {
+    if (c.type === "semi-product" || c.type === "fixture") continue;
+    const av = componentUnitsAvailable(c);
+    if (av < equipped) equipped = av;
+  }
+  if (equipped === Infinity) equipped = 0;
+  equipped = Math.min(equipped, batchSize);
+
+  const assembled = product.assembledOperationId
+    ? opById.get(product.assembledOperationId)?.completedUnits ?? 0
+    : 0;
+  const tested = product.testedOperationId
+    ? opById.get(product.testedOperationId)?.completedUnits ?? 0
+    : 0;
+
+  let fullBatchLeadDays = 0;
+  for (const c of components) {
+    if (c.type === "semi-product" || c.type === "fixture") continue;
+    for (const p of c.positions) {
+      const req = p.quantityPerUnit * batchSize;
+      if (req > p.stock && p.leadTimeDays > fullBatchLeadDays) fullBatchLeadDays = p.leadTimeDays;
+    }
+  }
+  const totalProductionDays = sorted.reduce((s, o) => s + o.durationHours / 24, 0);
 
   return {
     batchSize,
-    canStartNow,
-    globalBottleneck,
-    operationResults,
-    fullBatchAvailabilityDays,
-    estimatedCompletionDays,
+    equipped,
+    assembled,
+    tested,
+    shipped: product.shippedUnits,
+    blockers: computedList
+      .filter((c) => c.status === "blocked")
+      .map((c) => ({
+        operationId: c.operationId,
+        operationName: opById.get(c.operationId)!.name,
+        reason: c.reason,
+      })),
+    operations: computedList,
+    fullBatchLeadDays,
+    totalProductionDays,
   };
 }
 
-export function getShortageForBatch(
-  component: ComponentGroup,
-  batchSize: number,
-): { position: Position; required: number; short: number }[] {
-  if (component.type === "semi-product" || component.type === "fixture") return [];
-  return component.positions
-    .map((position) => ({
-      position,
-      required: position.quantityPerUnit * batchSize,
-      short: Math.max(0, position.quantityPerUnit * batchSize - position.stock),
-    }))
-    .filter((item) => item.short > 0);
+export function operationById(product: Product, id: string): Operation | undefined {
+  return product.operations.find((o) => o.id === id);
 }
