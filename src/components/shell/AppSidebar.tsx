@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { useProduction } from "@/lib/production/store";
 import type { Product } from "@/lib/production/types";
 
-const NAV_ITEMS = [
+const NAV_ITEMS: { to: string; label: string; icon: typeof Workflow; exact?: boolean }[] = [
   { to: "/", label: "Изделия", icon: LayoutDashboard, exact: true },
   { to: "/flow", label: "Тех.маршрут", icon: Workflow },
   { to: "/graph", label: "Граф", icon: GitBranch },
@@ -28,7 +28,7 @@ const NAV_ITEMS = [
   { to: "/purchases", label: "Закупки", icon: ShoppingCart },
   { to: "/analytics", label: "Аналитика", icon: BarChart3 },
   { to: "/settings", label: "Настройки", icon: Settings },
-] as const;
+];
 
 export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
