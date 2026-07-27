@@ -146,6 +146,20 @@ export function computeSummary(product: Product): Summary {
       status = "waiting";
       reason = "Ожидание";
     }
+  // Chain semantics: only the earliest blocked operation stays RED,
+  // subsequent blocked ones downgrade to ORANGE ("next problem").
+  let sawBlocker = false;
+  for (const c of computedList) {
+    if (c.status === "blocked") {
+      if (sawBlocker) {
+        c.status = "next";
+        c.reason = `Следующая проблема · ${c.reason}`;
+      } else {
+        sawBlocker = true;
+      }
+    }
+  }
+
 
     computedList.push({
       operationId: op.id,
