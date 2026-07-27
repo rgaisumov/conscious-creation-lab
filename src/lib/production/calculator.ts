@@ -97,13 +97,20 @@ export function computeSummary(product: Product): Summary {
       }
 
       const reqValueForOk = c.type === "fixture" ? 1 : remainingNeed;
+      const reqForStatus = c.type === "fixture" ? 1 : batchSize;
+      const availForStatus = available === Infinity ? Number.POSITIVE_INFINITY : available;
+      let availability: "full" | "partial" | "none";
+      if (availForStatus >= reqForStatus) availability = "full";
+      else if (availForStatus > 0) availability = "partial";
+      else availability = "none";
       requirements.push({
         componentId: c.id,
         componentName: c.name,
         type: c.type,
-        required: c.type === "fixture" ? 1 : batchSize,
-        available: available === Infinity ? Number.POSITIVE_INFINITY : available,
+        required: reqForStatus,
+        available: availForStatus,
         ok: available >= reqValueForOk,
+        availability,
       });
     }
 
