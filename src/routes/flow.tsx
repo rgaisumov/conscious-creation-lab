@@ -388,17 +388,38 @@ function DetailsPanel({
         <div>
           <h3 className="text-sm font-semibold mb-2">Требуется для запуска</h3>
           <div className="space-y-1.5">
-            {computed.requirements.map((r) => (
-              <div key={r.componentId} className="flex items-center gap-2 text-sm px-2 py-1.5 rounded bg-muted/40">
-                <div className={cn("h-2 w-2 rounded-full shrink-0", r.ok ? "bg-status-done" : "bg-status-block")} />
-                <span className="flex-1 truncate">{r.componentName}</span>
-                <span className={cn("text-xs tabular-nums", !r.ok && "text-status-block font-medium")}>
-                  {Number.isFinite(r.available) ? r.available : "∞"}/{r.required}
-                </span>
-              </div>
-            ))}
+            {[...computed.requirements]
+              .sort(
+                (a, b) =>
+                  ({ none: 0, partial: 1, full: 2 })[a.availability] -
+                  ({ none: 0, partial: 1, full: 2 })[b.availability],
+              )
+              .map((r) => {
+                const dot =
+                  r.availability === "full"
+                    ? "bg-status-done"
+                    : r.availability === "partial"
+                    ? "bg-status-wait"
+                    : "bg-status-block";
+                const txt =
+                  r.availability === "full"
+                    ? ""
+                    : r.availability === "partial"
+                    ? "text-status-wait font-medium"
+                    : "text-status-block font-medium";
+                return (
+                  <div key={r.componentId} className="flex items-center gap-2 text-sm px-2 py-1.5 rounded bg-muted/40">
+                    <div className={cn("h-2 w-2 rounded-full shrink-0", dot)} />
+                    <span className="flex-1 truncate">{r.componentName}</span>
+                    <span className={cn("text-xs tabular-nums", txt)}>
+                      {Number.isFinite(r.available) ? r.available : "∞"}/{r.required}
+                    </span>
+                  </div>
+                );
+              })}
           </div>
         </div>
+
 
         {computed.status === "done" && (
           <div className="flex items-center gap-2 text-sm text-status-done">
