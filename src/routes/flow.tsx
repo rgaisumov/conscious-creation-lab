@@ -241,15 +241,29 @@ function OperationRow({
               Требуется ({okCount}/{visibleReqs.length})
             </div>
             <div className="space-y-1">
-              {visibleReqs.slice(0, 5).map((r) => (
-                <div key={r.componentId} className="flex items-center gap-2 text-xs">
-                  <div className={cn("h-1.5 w-1.5 rounded-full shrink-0", r.ok ? "bg-status-done" : "bg-status-block")} />
-                  <span className="flex-1 truncate">{r.componentName}</span>
-                  <span className={cn("tabular-nums", !r.ok && "text-status-block font-medium")}>
-                    {Number.isFinite(r.available) ? r.available : "∞"}/{r.required}
-                  </span>
-                </div>
-              ))}
+              {visibleReqs.slice(0, 5).map((r) => {
+                const dot =
+                  r.availability === "full"
+                    ? "bg-status-done"
+                    : r.availability === "partial"
+                    ? "bg-status-wait"
+                    : "bg-status-block";
+                const txt =
+                  r.availability === "full"
+                    ? ""
+                    : r.availability === "partial"
+                    ? "text-status-wait font-medium"
+                    : "text-status-block font-medium";
+                return (
+                  <div key={r.componentId} className="flex items-center gap-2 text-xs">
+                    <div className={cn("h-1.5 w-1.5 rounded-full shrink-0", dot)} />
+                    <span className="flex-1 truncate">{r.componentName}</span>
+                    <span className={cn("tabular-nums", txt)}>
+                      {Number.isFinite(r.available) ? r.available : "∞"}/{r.required}
+                    </span>
+                  </div>
+                );
+              })}
               {visibleReqs.length > 5 && (
                 <div className="text-xs text-muted-foreground">+{visibleReqs.length - 5}…</div>
               )}
