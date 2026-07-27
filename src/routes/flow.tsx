@@ -178,8 +178,12 @@ function OperationRow({
   const meta = STATUS_META[computed.status];
   const completedPct = batchSize > 0 ? (computed.completed / batchSize) * 100 : 0;
   const canPct = batchSize > 0 ? ((computed.completed + computed.canPerformNow) / batchSize) * 100 : 0;
-  const visibleReqs = computed.requirements.filter((r) => (showSemiProducts ? true : r.type !== "semi-product"));
-  const okCount = visibleReqs.filter((r) => r.ok).length;
+  const rank: Record<string, number> = { none: 0, partial: 1, full: 2 };
+  const visibleReqs = computed.requirements
+    .filter((r) => (showSemiProducts ? true : r.type !== "semi-product"))
+    .slice()
+    .sort((a, b) => rank[a.availability] - rank[b.availability]);
+  const okCount = visibleReqs.filter((r) => r.availability === "full").length;
 
   return (
     <button
