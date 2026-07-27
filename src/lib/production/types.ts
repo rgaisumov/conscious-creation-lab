@@ -57,6 +57,8 @@ export interface OperationShortage {
   leadTimeDays: number;
 }
 
+export type ComponentAvailabilityStatus = "full" | "partial" | "none";
+
 export interface OperationComputed {
   operationId: string;
   completed: number;
@@ -73,6 +75,7 @@ export interface OperationComputed {
     required: number;
     available: number;
     ok: boolean;
+    availability: ComponentAvailabilityStatus;
   }[];
 }
 

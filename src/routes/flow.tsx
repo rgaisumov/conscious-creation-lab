@@ -178,8 +178,12 @@ function OperationRow({
   const meta = STATUS_META[computed.status];
   const completedPct = batchSize > 0 ? (computed.completed / batchSize) * 100 : 0;
   const canPct = batchSize > 0 ? ((computed.completed + computed.canPerformNow) / batchSize) * 100 : 0;
-  const visibleReqs = computed.requirements.filter((r) => (showSemiProducts ? true : r.type !== "semi-product"));
-  const okCount = visibleReqs.filter((r) => r.ok).length;
+  const rank: Record<string, number> = { none: 0, partial: 1, full: 2 };
+  const visibleReqs = computed.requirements
+    .filter((r) => (showSemiProducts ? true : r.type !== "semi-product"))
+    .slice()
+    .sort((a, b) => rank[a.availability] - rank[b.availability]);
+  const okCount = visibleReqs.filter((r) => r.availability === "full").length;
 
   return (
     <button
@@ -237,15 +241,29 @@ function OperationRow({
               Требуется ({okCount}/{visibleReqs.length})
             </div>
             <div className="space-y-1">
-              {visibleReqs.slice(0, 5).map((r) => (
-                <div key={r.componentId} className="flex items-center gap-2 text-xs">
-                  <div className={cn("h-1.5 w-1.5 rounded-full shrink-0", r.ok ? "bg-status-done" : "bg-status-block")} />
-                  <span className="flex-1 truncate">{r.componentName}</span>
-                  <span className={cn("tabular-nums", !r.ok && "text-status-block font-medium")}>
-                    {Number.isFinite(r.available) ? r.available : "∞"}/{r.required}
-                  </span>
-                </div>
-              ))}
+              {visibleReqs.slice(0, 5).map((r) => {
+                const dot =
+                  r.availability === "full"
+                    ? "bg-status-done"
+                    : r.availability === "partial"
+                    ? "bg-status-wait"
+                    : "bg-status-block";
+                const txt =
+                  r.availability === "full"
+                    ? ""
+                    : r.availability === "partial"
+                    ? "text-status-wait font-medium"
+                    : "text-status-block font-medium";
+                return (
+                  <div key={r.componentId} className="flex items-center gap-2 text-xs">
+                    <div className={cn("h-1.5 w-1.5 rounded-full shrink-0", dot)} />
+                    <span className="flex-1 truncate">{r.componentName}</span>
+                    <span className={cn("tabular-nums", txt)}>
+                      {Number.isFinite(r.available) ? r.available : "∞"}/{r.required}
+                    </span>
+                  </div>
+                );
+              })}
               {visibleReqs.length > 5 && (
                 <div className="text-xs text-muted-foreground">+{visibleReqs.length - 5}…</div>
               )}
@@ -370,17 +388,38 @@ function DetailsPanel({
         <div>
           <h3 className="text-sm font-semibold mb-2">Требуется для запуска</h3>
           <div className="space-y-1.5">
-            {computed.requirements.map((r) => (
-              <div key={r.componentId} className="flex items-center gap-2 text-sm px-2 py-1.5 rounded bg-muted/40">
-                <div className={cn("h-2 w-2 rounded-full shrink-0", r.ok ? "bg-status-done" : "bg-status-block")} />
-                <span className="flex-1 truncate">{r.componentName}</span>
-                <span className={cn("text-xs tabular-nums", !r.ok && "text-status-block font-medium")}>
-                  {Number.isFinite(r.available) ? r.available : "∞"}/{r.required}
-                </span>
-              </div>
-            ))}
+            {[...computed.requirements]
+              .sort(
+                (a, b) =>
+                  ({ none: 0, partial: 1, full: 2 })[a.availability] -
+                  ({ none: 0, partial: 1, full: 2 })[b.availability],
+              )
+              .map((r) => {
+                const dot =
+                  r.availability === "full"
+                    ? "bg-status-done"
+                    : r.availability === "partial"
+                    ? "bg-status-wait"
+                    : "bg-status-block";
+                const txt =
+                  r.availability === "full"
+                    ? ""
+                    : r.availability === "partial"
+                    ? "text-status-wait font-medium"
+                    : "text-status-block font-medium";
+                return (
+                  <div key={r.componentId} className="flex items-center gap-2 text-sm px-2 py-1.5 rounded bg-muted/40">
+                    <div className={cn("h-2 w-2 rounded-full shrink-0", dot)} />
+                    <span className="flex-1 truncate">{r.componentName}</span>
+                    <span className={cn("text-xs tabular-nums", txt)}>
+                      {Number.isFinite(r.available) ? r.available : "∞"}/{r.required}
+                    </span>
+                  </div>
+                );
+              })}
           </div>
         </div>
+
 
         {computed.status === "done" && (
           <div className="flex items-center gap-2 text-sm text-status-done">
@@ -406,6 +445,7 @@ function LegendBar({
 }) {
   const items = [
     { label: "Блокирует", color: "bg-status-block" },
+    { label: "Следующая проблема", color: "bg-status-next" },
     { label: "Ждёт предыдущую", color: "bg-status-wait" },
     { label: "Готова", color: "bg-status-ready" },
     { label: "Выполняется", color: "bg-status-run" },
