@@ -445,6 +445,7 @@ function LegendBar({
 }) {
   const items = [
     { label: "Блокирует", color: "bg-status-block" },
+    { label: "Следующая проблема", color: "bg-status-next" },
     { label: "Ждёт предыдущую", color: "bg-status-wait" },
     { label: "Готова", color: "bg-status-ready" },
     { label: "Выполняется", color: "bg-status-run" },
