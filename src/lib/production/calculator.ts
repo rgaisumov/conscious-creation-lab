@@ -146,6 +146,20 @@ export function computeSummary(product: Product): Summary {
       status = "waiting";
       reason = "Ожидание";
     }
+
+    computedList.push({
+      operationId: op.id,
+      completed,
+      canPerformNow: capacity,
+      remaining: batchSize - completed,
+      status,
+      reason,
+      shortages,
+      waitingFor,
+      requirements,
+    });
+  }
+
   // Chain semantics: only the earliest blocked operation stays RED,
   // subsequent blocked ones downgrade to ORANGE ("next problem").
   let sawBlocker = false;
@@ -160,19 +174,6 @@ export function computeSummary(product: Product): Summary {
     }
   }
 
-
-    computedList.push({
-      operationId: op.id,
-      completed,
-      canPerformNow: capacity,
-      remaining: batchSize - completed,
-      status,
-      reason,
-      shortages,
-      waitingFor,
-      requirements,
-    });
-  }
 
   // «Укомплектовано» = min по всем расходуемым компонентам (materials + eri).
   let equipped = Infinity;
