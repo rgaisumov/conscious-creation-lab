@@ -1,9 +1,6 @@
 # Friendly Reader
 
-https://claude.ai/share/c4ef2e51-bd36-4f62-8d71-0e66a7424a82
-Можешь прочитать?
-
-This project was built with [Lovable](https://lovable.dev).
+This project was start with [Lovable](https://lovable.dev).
 
 ## Build with Lovable
 
