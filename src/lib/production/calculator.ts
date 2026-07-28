@@ -9,7 +9,7 @@ import type {
 } from "./types";
 
 /** Available "units" of a component. */
-function componentUnitsAvailable(component: ComponentGroup): number {
+export function componentUnitsAvailable(component: ComponentGroup): number {
   if (component.type === "semi-product") return Infinity;
   if (component.type === "fixture") {
     return (component.fixtureCount ?? 0) > 0 ? Infinity : 0;

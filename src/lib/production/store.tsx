@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 import { initialProduct } from "./data";
 import { computeSummary } from "./calculator";
-import type { Operation, Product, Summary } from "./types";
+import type { Operation, Position, Product, Summary } from "./types";
 
 type Ctx = {
   product: Product;
@@ -10,6 +10,8 @@ type Ctx = {
   setBatchSize: (n: number) => void;
   setShipped: (n: number) => void;
   updateOperation: (id: string, patch: Partial<Operation>) => void;
+  updatePosition: (componentId: string, positionId: string, patch: Partial<Position>) => void;
+  updateFixtureCount: (componentId: string, n: number) => void;
 };
 
 const ProductionContext = createContext<Ctx | null>(null);
@@ -35,8 +37,39 @@ export function ProductionProvider({ children }: { children: ReactNode }) {
       })),
     [],
   );
+  const updatePosition = useCallback(
+    (componentId: string, positionId: string, patch: Partial<Position>) =>
+      setProduct((p) => ({
+        ...p,
+        components: p.components.map((c) =>
+          c.id !== componentId
+            ? c
+            : { ...c, positions: c.positions.map((pos) => (pos.id === positionId ? { ...pos, ...patch } : pos)) },
+        ),
+      })),
+    [],
+  );
+  const updateFixtureCount = useCallback(
+    (componentId: string, n: number) =>
+      setProduct((p) => ({
+        ...p,
+        components: p.components.map((c) =>
+          c.id === componentId ? { ...c, fixtureCount: Math.max(0, n) } : c,
+        ),
+      })),
+    [],
+  );
 
-  const value: Ctx = { product, summary, setProduct, setBatchSize, setShipped, updateOperation };
+  const value: Ctx = {
+    product,
+    summary,
+    setProduct,
+    setBatchSize,
+    setShipped,
+    updateOperation,
+    updatePosition,
+    updateFixtureCount,
+  };
   return <ProductionContext.Provider value={value}>{children}</ProductionContext.Provider>;
 }
 
