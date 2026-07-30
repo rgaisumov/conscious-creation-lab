@@ -11,7 +11,6 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ProductsRouteImport } from './routes/products'
-import { Route as ProductionRouteImport } from './routes/production'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SitemapXmlRouteImport } from './routes/sitemap.xml'
 import { Route as BatchesBatchIdRouteImport } from './routes/batches.$batchId'
@@ -27,11 +26,6 @@ const SettingsRoute = SettingsRouteImport.update({
 const ProductsRoute = ProductsRouteImport.update({
   id: '/products',
   path: '/products',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ProductionRoute = ProductionRouteImport.update({
-  id: '/production',
-  path: '/production',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -68,7 +62,6 @@ const BatchesBatchIdComponentsRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/production': typeof ProductionRoute
   '/products': typeof ProductsRoute
   '/settings': typeof SettingsRoute
   '/batches/$batchId': typeof BatchesBatchIdRouteWithChildren
@@ -79,7 +72,6 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/production': typeof ProductionRoute
   '/products': typeof ProductsRoute
   '/settings': typeof SettingsRoute
   '/sitemap/xml': typeof SitemapXmlRoute
@@ -90,7 +82,6 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/production': typeof ProductionRoute
   '/products': typeof ProductsRoute
   '/settings': typeof SettingsRoute
   '/batches/$batchId': typeof BatchesBatchIdRouteWithChildren
@@ -103,7 +94,6 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/production'
     | '/products'
     | '/settings'
     | '/batches/$batchId'
@@ -114,7 +104,6 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/production'
     | '/products'
     | '/settings'
     | '/sitemap/xml'
@@ -124,7 +113,6 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
-    | '/production'
     | '/products'
     | '/settings'
     | '/batches/$batchId'
@@ -136,7 +124,6 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  ProductionRoute: typeof ProductionRoute
   ProductsRoute: typeof ProductsRoute
   SettingsRoute: typeof SettingsRoute
   BatchesBatchIdRoute: typeof BatchesBatchIdRouteWithChildren
@@ -157,13 +144,6 @@ declare module '@tanstack/react-router' {
       path: '/products'
       fullPath: '/products'
       preLoaderRoute: typeof ProductsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/production': {
-      id: '/production'
-      path: '/production'
-      fullPath: '/production'
-      preLoaderRoute: typeof ProductionRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -229,7 +209,6 @@ const BatchesBatchIdRouteWithChildren = BatchesBatchIdRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  ProductionRoute: ProductionRoute,
   ProductsRoute: ProductsRoute,
   SettingsRoute: SettingsRoute,
   BatchesBatchIdRoute: BatchesBatchIdRouteWithChildren,
@@ -238,3 +217,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
