@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as ProductsRouteImport } from './routes/products'
 import { Route as ProductionRouteImport } from './routes/production'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SitemapXmlRouteImport } from './routes/sitemap.xml'
@@ -17,6 +18,11 @@ import { Route as SitemapXmlRouteImport } from './routes/sitemap.xml'
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProductsRoute = ProductsRouteImport.update({
+  id: '/products',
+  path: '/products',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProductionRoute = ProductionRouteImport.update({
@@ -38,12 +44,14 @@ const SitemapXmlRoute = SitemapXmlRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/production': typeof ProductionRoute
+  '/products': typeof ProductsRoute
   '/settings': typeof SettingsRoute
   '/sitemap/xml': typeof SitemapXmlRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/production': typeof ProductionRoute
+  '/products': typeof ProductsRoute
   '/settings': typeof SettingsRoute
   '/sitemap/xml': typeof SitemapXmlRoute
 }
@@ -51,20 +59,28 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/production': typeof ProductionRoute
+  '/products': typeof ProductsRoute
   '/settings': typeof SettingsRoute
   '/sitemap/xml': typeof SitemapXmlRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/production' | '/settings' | '/sitemap/xml'
+  fullPaths: '/' | '/production' | '/products' | '/settings' | '/sitemap/xml'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/production' | '/settings' | '/sitemap/xml'
-  id: '__root__' | '/' | '/production' | '/settings' | '/sitemap/xml'
+  to: '/' | '/production' | '/products' | '/settings' | '/sitemap/xml'
+  id:
+    | '__root__'
+    | '/'
+    | '/production'
+    | '/products'
+    | '/settings'
+    | '/sitemap/xml'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ProductionRoute: typeof ProductionRoute
+  ProductsRoute: typeof ProductsRoute
   SettingsRoute: typeof SettingsRoute
   SitemapXmlRoute: typeof SitemapXmlRoute
 }
@@ -76,6 +92,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/products': {
+      id: '/products'
+      path: '/products'
+      fullPath: '/products'
+      preLoaderRoute: typeof ProductsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/production': {
@@ -105,6 +128,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ProductionRoute: ProductionRoute,
+  ProductsRoute: ProductsRoute,
   SettingsRoute: SettingsRoute,
   SitemapXmlRoute: SitemapXmlRoute,
 }
