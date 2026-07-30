@@ -15,6 +15,7 @@ import { Route as ProductionRouteImport } from './routes/production'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SitemapXmlRouteImport } from './routes/sitemap.xml'
 import { Route as BatchesBatchIdRouteImport } from './routes/batches.$batchId'
+import { Route as BatchesBatchIdIndexRouteImport } from './routes/batches.$batchId.index'
 
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
@@ -46,22 +47,28 @@ const BatchesBatchIdRoute = BatchesBatchIdRouteImport.update({
   path: '/batches/$batchId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BatchesBatchIdIndexRoute = BatchesBatchIdIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => BatchesBatchIdRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/production': typeof ProductionRoute
   '/products': typeof ProductsRoute
   '/settings': typeof SettingsRoute
-  '/batches/$batchId': typeof BatchesBatchIdRoute
+  '/batches/$batchId': typeof BatchesBatchIdRouteWithChildren
   '/sitemap/xml': typeof SitemapXmlRoute
+  '/batches/$batchId/': typeof BatchesBatchIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/production': typeof ProductionRoute
   '/products': typeof ProductsRoute
   '/settings': typeof SettingsRoute
-  '/batches/$batchId': typeof BatchesBatchIdRoute
   '/sitemap/xml': typeof SitemapXmlRoute
+  '/batches/$batchId': typeof BatchesBatchIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -69,8 +76,9 @@ export interface FileRoutesById {
   '/production': typeof ProductionRoute
   '/products': typeof ProductsRoute
   '/settings': typeof SettingsRoute
-  '/batches/$batchId': typeof BatchesBatchIdRoute
+  '/batches/$batchId': typeof BatchesBatchIdRouteWithChildren
   '/sitemap/xml': typeof SitemapXmlRoute
+  '/batches/$batchId/': typeof BatchesBatchIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -81,14 +89,15 @@ export interface FileRouteTypes {
     | '/settings'
     | '/batches/$batchId'
     | '/sitemap/xml'
+    | '/batches/$batchId/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/production'
     | '/products'
     | '/settings'
-    | '/batches/$batchId'
     | '/sitemap/xml'
+    | '/batches/$batchId'
   id:
     | '__root__'
     | '/'
@@ -97,6 +106,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/batches/$batchId'
     | '/sitemap/xml'
+    | '/batches/$batchId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -104,7 +114,7 @@ export interface RootRouteChildren {
   ProductionRoute: typeof ProductionRoute
   ProductsRoute: typeof ProductsRoute
   SettingsRoute: typeof SettingsRoute
-  BatchesBatchIdRoute: typeof BatchesBatchIdRoute
+  BatchesBatchIdRoute: typeof BatchesBatchIdRouteWithChildren
   SitemapXmlRoute: typeof SitemapXmlRoute
 }
 
@@ -152,15 +162,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BatchesBatchIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/batches/$batchId/': {
+      id: '/batches/$batchId/'
+      path: '/'
+      fullPath: '/batches/$batchId/'
+      preLoaderRoute: typeof BatchesBatchIdIndexRouteImport
+      parentRoute: typeof BatchesBatchIdRoute
+    }
   }
 }
+
+interface BatchesBatchIdRouteChildren {
+  BatchesBatchIdIndexRoute: typeof BatchesBatchIdIndexRoute
+}
+
+const BatchesBatchIdRouteChildren: BatchesBatchIdRouteChildren = {
+  BatchesBatchIdIndexRoute: BatchesBatchIdIndexRoute,
+}
+
+const BatchesBatchIdRouteWithChildren = BatchesBatchIdRoute._addFileChildren(
+  BatchesBatchIdRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ProductionRoute: ProductionRoute,
   ProductsRoute: ProductsRoute,
   SettingsRoute: SettingsRoute,
-  BatchesBatchIdRoute: BatchesBatchIdRoute,
+  BatchesBatchIdRoute: BatchesBatchIdRouteWithChildren,
   SitemapXmlRoute: SitemapXmlRoute,
 }
 export const routeTree = rootRouteImport
