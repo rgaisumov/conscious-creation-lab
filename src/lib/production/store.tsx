@@ -1,75 +1,198 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
-import { initialProduct } from "./data";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
+import { initialBatches, initialProducts } from "./data";
 import { computeSummary } from "./calculator";
-import type { Operation, Position, Product, Summary } from "./types";
+import type { Batch, Position, Product, Summary } from "./types";
+
+export type Theme = "light" | "dark";
 
 type Ctx = {
-  product: Product;
-  summary: Summary;
-  setProduct: (p: Product) => void;
-  setBatchSize: (n: number) => void;
-  setShipped: (n: number) => void;
-  updateOperation: (id: string, patch: Partial<Operation>) => void;
-  updatePosition: (componentId: string, positionId: string, patch: Partial<Position>) => void;
-  updateFixtureCount: (componentId: string, n: number) => void;
+  products: Product[];
+  batches: Batch[];
+  theme: Theme;
+  setTheme: (t: Theme) => void;
+  toggleTheme: () => void;
+  getProduct: (id: string) => Product | undefined;
+  getBatch: (id: string) => Batch | undefined;
+  summaryOf: (batch: Batch) => Summary;
+  setCompleted: (batchId: string, operationId: string, n: number) => void;
+  setShipped: (batchId: string, n: number) => void;
+  setOrderedQty: (batchId: string, n: number) => void;
+  updatePosition: (productId: string, componentId: string, positionId: string, patch: Partial<Position>) => void;
+  updateFixtureCount: (productId: string, componentId: string, n: number) => void;
+  addBatch: (productId: string) => string;
+  importState: (s: { products: Product[]; batches: Batch[] }) => void;
+  exportState: () => { products: Product[]; batches: Batch[] };
 };
 
 const ProductionContext = createContext<Ctx | null>(null);
 
 export function ProductionProvider({ children }: { children: ReactNode }) {
-  const [product, setProduct] = useState<Product>(initialProduct);
-  const summary = useMemo(() => computeSummary(product), [product]);
+  const [products, setProducts] = useState<Product[]>(initialProducts);
+  const [batches, setBatches] = useState<Batch[]>(initialBatches);
+  const [theme, setThemeState] = useState<Theme>("dark");
 
-  const setBatchSize = useCallback(
-    (n: number) => setProduct((p) => ({ ...p, batchSize: Math.max(1, n) })),
-    [],
+  useEffect(() => {
+    const stored = window.localStorage.getItem("pm-theme");
+    if (stored === "light" || stored === "dark") setThemeState(stored);
+  }, []);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.toggle("dark", theme === "dark");
+    window.localStorage.setItem("pm-theme", theme);
+  }, [theme]);
+
+  const setTheme = useCallback((t: Theme) => setThemeState(t), []);
+  const toggleTheme = useCallback(() => setThemeState((t) => (t === "dark" ? "light" : "dark")), []);
+
+  const getProduct = useCallback((id: string) => products.find((p) => p.id === id), [products]);
+  const getBatch = useCallback((id: string) => batches.find((b) => b.id === id), [batches]);
+
+  const summaryOf = useCallback(
+    (batch: Batch) => {
+      const product = products.find((p) => p.id === batch.productId);
+      if (!product) throw new Error(`Product ${batch.productId} not found`);
+      return computeSummary(product, batch);
+    },
+    [products],
   );
-  const setShipped = useCallback(
-    (n: number) =>
-      setProduct((p) => ({ ...p, shippedUnits: Math.max(0, Math.min(p.batchSize, n)) })),
-    [],
-  );
-  const updateOperation = useCallback(
-    (id: string, patch: Partial<Operation>) =>
-      setProduct((p) => ({
-        ...p,
-        operations: p.operations.map((o) => (o.id === id ? { ...o, ...patch } : o)),
-      })),
-    [],
-  );
+
+  const setCompleted = useCallback((batchId: string, operationId: string, n: number) => {
+    setBatches((bs) =>
+      bs.map((b) =>
+        b.id !== batchId
+          ? b
+          : { ...b, completed: { ...b.completed, [operationId]: Math.max(0, Math.min(b.orderedQty, n)) } },
+      ),
+    );
+  }, []);
+
+  const setShipped = useCallback((batchId: string, n: number) => {
+    setBatches((bs) =>
+      bs.map((b) => (b.id !== batchId ? b : { ...b, shippedQty: Math.max(0, Math.min(b.orderedQty, n)) })),
+    );
+  }, []);
+
+  const setOrderedQty = useCallback((batchId: string, n: number) => {
+    setBatches((bs) => bs.map((b) => (b.id !== batchId ? b : { ...b, orderedQty: Math.max(1, n) })));
+  }, []);
+
   const updatePosition = useCallback(
-    (componentId: string, positionId: string, patch: Partial<Position>) =>
-      setProduct((p) => ({
-        ...p,
-        components: p.components.map((c) =>
-          c.id !== componentId
-            ? c
-            : { ...c, positions: c.positions.map((pos) => (pos.id === positionId ? { ...pos, ...patch } : pos)) },
+    (productId: string, componentId: string, positionId: string, patch: Partial<Position>) => {
+      setProducts((ps) =>
+        ps.map((p) =>
+          p.id !== productId
+            ? p
+            : {
+                ...p,
+                components: p.components.map((c) =>
+                  c.id !== componentId
+                    ? c
+                    : {
+                        ...c,
+                        positions: c.positions.map((pos) =>
+                          pos.id === positionId ? { ...pos, ...patch } : pos,
+                        ),
+                      },
+                ),
+              },
         ),
-      })),
-    [],
-  );
-  const updateFixtureCount = useCallback(
-    (componentId: string, n: number) =>
-      setProduct((p) => ({
-        ...p,
-        components: p.components.map((c) =>
-          c.id === componentId ? { ...c, fixtureCount: Math.max(0, n) } : c,
-        ),
-      })),
+      );
+    },
     [],
   );
 
-  const value: Ctx = {
-    product,
-    summary,
-    setProduct,
-    setBatchSize,
-    setShipped,
-    updateOperation,
-    updatePosition,
-    updateFixtureCount,
-  };
+  const updateFixtureCount = useCallback((productId: string, componentId: string, n: number) => {
+    setProducts((ps) =>
+      ps.map((p) =>
+        p.id !== productId
+          ? p
+          : {
+              ...p,
+              components: p.components.map((c) =>
+                c.id === componentId ? { ...c, fixtureCount: Math.max(0, n) } : c,
+              ),
+            },
+      ),
+    );
+  }, []);
+
+  const addBatch = useCallback((productId: string) => {
+    const id = `b-${Math.random().toString(36).slice(2, 8)}`;
+    setBatches((bs) => {
+      const count = bs.filter((b) => b.productId === productId).length + 1;
+      const due = new Date();
+      due.setDate(due.getDate() + 45);
+      return [
+        ...bs,
+        {
+          id,
+          productId,
+          number: `Н-${new Date().getFullYear()}/${String(count).padStart(3, "0")}`,
+          orderedQty: 50,
+          shippedQty: 0,
+          dueDate: due.toISOString().slice(0, 10),
+          completed: {},
+        },
+      ];
+    });
+    return id;
+  }, []);
+
+  const importState = useCallback((s: { products: Product[]; batches: Batch[] }) => {
+    if (Array.isArray(s.products)) setProducts(s.products);
+    if (Array.isArray(s.batches)) setBatches(s.batches);
+  }, []);
+
+  const exportState = useCallback(() => ({ products, batches }), [products, batches]);
+
+  const value = useMemo<Ctx>(
+    () => ({
+      products,
+      batches,
+      theme,
+      setTheme,
+      toggleTheme,
+      getProduct,
+      getBatch,
+      summaryOf,
+      setCompleted,
+      setShipped,
+      setOrderedQty,
+      updatePosition,
+      updateFixtureCount,
+      addBatch,
+      importState,
+      exportState,
+    }),
+    [
+      products,
+      batches,
+      theme,
+      setTheme,
+      toggleTheme,
+      getProduct,
+      getBatch,
+      summaryOf,
+      setCompleted,
+      setShipped,
+      setOrderedQty,
+      updatePosition,
+      updateFixtureCount,
+      addBatch,
+      importState,
+      exportState,
+    ],
+  );
+
   return <ProductionContext.Provider value={value}>{children}</ProductionContext.Provider>;
 }
 
