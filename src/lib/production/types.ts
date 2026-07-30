@@ -6,6 +6,8 @@ export interface Position {
   quantityPerUnit: number;
   stock: number;
   leadTimeDays: number;
+  supplier?: string;
+  note?: string;
 }
 
 export interface ComponentGroup {
@@ -16,6 +18,7 @@ export interface ComponentGroup {
   isShared?: boolean;
   fixtureCount?: number;
   producedByOperationId?: string | null;
+  note?: string;
 }
 
 export interface Operation {
@@ -26,19 +29,42 @@ export interface Operation {
   order: number;
   inputComponentIds: string[];
   outputComponentId: string | null;
-  completedUnits: number;
+  /** Optional OperationGroup id (OG001) */
+  groupId?: string;
   note?: string;
 }
 
+/** Logical stage grouping several independent operations (OG001-OG003). */
+export interface OperationGroup {
+  id: string;
+  name: string;
+}
+
+/** Product stores manufacturing knowledge (PM001). */
 export interface Product {
   id: string;
   name: string;
-  batchSize: number;
-  shippedUnits: number;
+  version: string;
+  note?: string;
+  archived?: boolean;
   assembledOperationId?: string;
   testedOperationId?: string;
   components: ComponentGroup[];
   operations: Operation[];
+  operationGroups: OperationGroup[];
+}
+
+/** Batch stores manufacturing execution (PM001, BM001). */
+export interface Batch {
+  id: string;
+  productId: string;
+  number: string;
+  orderedQty: number;
+  shippedQty: number;
+  dueDate: string; // ISO date
+  note?: string;
+  /** operationId -> completed units */
+  completed: Record<string, number>;
 }
 
 export type OperationVisualStatus =
@@ -59,6 +85,16 @@ export interface OperationShortage {
 
 export type ComponentAvailabilityStatus = "full" | "partial" | "none";
 
+export interface OperationRequirement {
+  componentId: string;
+  componentName: string;
+  type: ComponentType;
+  required: number;
+  available: number;
+  ok: boolean;
+  availability: ComponentAvailabilityStatus;
+}
+
 export interface OperationComputed {
   operationId: string;
   completed: number;
@@ -68,16 +104,19 @@ export interface OperationComputed {
   reason: string;
   shortages: OperationShortage[];
   waitingFor?: { operationId: string; operationName: string; missing: number };
-  requirements: {
-    componentId: string;
-    componentName: string;
-    type: ComponentType;
-    required: number;
-    available: number;
-    ok: boolean;
-    availability: ComponentAvailabilityStatus;
-  }[];
+  requirements: OperationRequirement[];
 }
+
+export interface OperationGroupComputed {
+  groupId: string;
+  name: string;
+  operationIds: string[];
+  completed: number;
+  status: OperationVisualStatus;
+  reason: string;
+}
+
+export type BatchHealth = "ok" | "risk" | "late";
 
 export interface Summary {
   batchSize: number;
@@ -87,6 +126,11 @@ export interface Summary {
   shipped: number;
   blockers: { operationId: string; operationName: string; reason: string }[];
   operations: OperationComputed[];
+  groups: OperationGroupComputed[];
   fullBatchLeadDays: number;
   totalProductionDays: number;
+  delayDays: number;
+  health: BatchHealth;
+  progressPct: number;
+  primaryBlockingReason: string;
 }
