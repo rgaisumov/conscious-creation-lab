@@ -10,12 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SettingsRouteImport } from './routes/settings'
-import { Route as PurchasesRouteImport } from './routes/purchases'
 import { Route as ProductionRouteImport } from './routes/production'
-import { Route as GraphRouteImport } from './routes/graph'
-import { Route as FlowRouteImport } from './routes/flow'
-import { Route as ComponentsRouteImport } from './routes/components'
-import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SitemapXmlRouteImport } from './routes/sitemap.xml'
 
@@ -24,34 +19,9 @@ const SettingsRoute = SettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PurchasesRoute = PurchasesRouteImport.update({
-  id: '/purchases',
-  path: '/purchases',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ProductionRoute = ProductionRouteImport.update({
   id: '/production',
   path: '/production',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const GraphRoute = GraphRouteImport.update({
-  id: '/graph',
-  path: '/graph',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FlowRoute = FlowRouteImport.update({
-  id: '/flow',
-  path: '/flow',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ComponentsRoute = ComponentsRouteImport.update({
-  id: '/components',
-  path: '/components',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AnalyticsRoute = AnalyticsRouteImport.update({
-  id: '/analytics',
-  path: '/analytics',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -67,82 +37,34 @@ const SitemapXmlRoute = SitemapXmlRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/analytics': typeof AnalyticsRoute
-  '/components': typeof ComponentsRoute
-  '/flow': typeof FlowRoute
-  '/graph': typeof GraphRoute
   '/production': typeof ProductionRoute
-  '/purchases': typeof PurchasesRoute
   '/settings': typeof SettingsRoute
   '/sitemap/xml': typeof SitemapXmlRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/analytics': typeof AnalyticsRoute
-  '/components': typeof ComponentsRoute
-  '/flow': typeof FlowRoute
-  '/graph': typeof GraphRoute
   '/production': typeof ProductionRoute
-  '/purchases': typeof PurchasesRoute
   '/settings': typeof SettingsRoute
   '/sitemap/xml': typeof SitemapXmlRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/analytics': typeof AnalyticsRoute
-  '/components': typeof ComponentsRoute
-  '/flow': typeof FlowRoute
-  '/graph': typeof GraphRoute
   '/production': typeof ProductionRoute
-  '/purchases': typeof PurchasesRoute
   '/settings': typeof SettingsRoute
   '/sitemap/xml': typeof SitemapXmlRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    | '/'
-    | '/analytics'
-    | '/components'
-    | '/flow'
-    | '/graph'
-    | '/production'
-    | '/purchases'
-    | '/settings'
-    | '/sitemap/xml'
+  fullPaths: '/' | '/production' | '/settings' | '/sitemap/xml'
   fileRoutesByTo: FileRoutesByTo
-  to:
-    | '/'
-    | '/analytics'
-    | '/components'
-    | '/flow'
-    | '/graph'
-    | '/production'
-    | '/purchases'
-    | '/settings'
-    | '/sitemap/xml'
-  id:
-    | '__root__'
-    | '/'
-    | '/analytics'
-    | '/components'
-    | '/flow'
-    | '/graph'
-    | '/production'
-    | '/purchases'
-    | '/settings'
-    | '/sitemap/xml'
+  to: '/' | '/production' | '/settings' | '/sitemap/xml'
+  id: '__root__' | '/' | '/production' | '/settings' | '/sitemap/xml'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AnalyticsRoute: typeof AnalyticsRoute
-  ComponentsRoute: typeof ComponentsRoute
-  FlowRoute: typeof FlowRoute
-  GraphRoute: typeof GraphRoute
   ProductionRoute: typeof ProductionRoute
-  PurchasesRoute: typeof PurchasesRoute
   SettingsRoute: typeof SettingsRoute
   SitemapXmlRoute: typeof SitemapXmlRoute
 }
@@ -156,46 +78,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/purchases': {
-      id: '/purchases'
-      path: '/purchases'
-      fullPath: '/purchases'
-      preLoaderRoute: typeof PurchasesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/production': {
       id: '/production'
       path: '/production'
       fullPath: '/production'
       preLoaderRoute: typeof ProductionRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/graph': {
-      id: '/graph'
-      path: '/graph'
-      fullPath: '/graph'
-      preLoaderRoute: typeof GraphRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/flow': {
-      id: '/flow'
-      path: '/flow'
-      fullPath: '/flow'
-      preLoaderRoute: typeof FlowRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/components': {
-      id: '/components'
-      path: '/components'
-      fullPath: '/components'
-      preLoaderRoute: typeof ComponentsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/analytics': {
-      id: '/analytics'
-      path: '/analytics'
-      fullPath: '/analytics'
-      preLoaderRoute: typeof AnalyticsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -217,12 +104,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AnalyticsRoute: AnalyticsRoute,
-  ComponentsRoute: ComponentsRoute,
-  FlowRoute: FlowRoute,
-  GraphRoute: GraphRoute,
   ProductionRoute: ProductionRoute,
-  PurchasesRoute: PurchasesRoute,
   SettingsRoute: SettingsRoute,
   SitemapXmlRoute: SitemapXmlRoute,
 }
