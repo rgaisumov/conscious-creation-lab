@@ -16,6 +16,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as SitemapXmlRouteImport } from './routes/sitemap.xml'
 import { Route as BatchesBatchIdRouteImport } from './routes/batches.$batchId'
 import { Route as BatchesBatchIdIndexRouteImport } from './routes/batches.$batchId.index'
+import { Route as BatchesBatchIdGraphRouteImport } from './routes/batches.$batchId.graph'
 
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
@@ -52,6 +53,11 @@ const BatchesBatchIdIndexRoute = BatchesBatchIdIndexRouteImport.update({
   path: '/',
   getParentRoute: () => BatchesBatchIdRoute,
 } as any)
+const BatchesBatchIdGraphRoute = BatchesBatchIdGraphRouteImport.update({
+  id: '/graph',
+  path: '/graph',
+  getParentRoute: () => BatchesBatchIdRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -60,6 +66,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/batches/$batchId': typeof BatchesBatchIdRouteWithChildren
   '/sitemap/xml': typeof SitemapXmlRoute
+  '/batches/$batchId/graph': typeof BatchesBatchIdGraphRoute
   '/batches/$batchId/': typeof BatchesBatchIdIndexRoute
 }
 export interface FileRoutesByTo {
@@ -68,6 +75,7 @@ export interface FileRoutesByTo {
   '/products': typeof ProductsRoute
   '/settings': typeof SettingsRoute
   '/sitemap/xml': typeof SitemapXmlRoute
+  '/batches/$batchId/graph': typeof BatchesBatchIdGraphRoute
   '/batches/$batchId': typeof BatchesBatchIdIndexRoute
 }
 export interface FileRoutesById {
@@ -78,6 +86,7 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/batches/$batchId': typeof BatchesBatchIdRouteWithChildren
   '/sitemap/xml': typeof SitemapXmlRoute
+  '/batches/$batchId/graph': typeof BatchesBatchIdGraphRoute
   '/batches/$batchId/': typeof BatchesBatchIdIndexRoute
 }
 export interface FileRouteTypes {
@@ -89,6 +98,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/batches/$batchId'
     | '/sitemap/xml'
+    | '/batches/$batchId/graph'
     | '/batches/$batchId/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -97,6 +107,7 @@ export interface FileRouteTypes {
     | '/products'
     | '/settings'
     | '/sitemap/xml'
+    | '/batches/$batchId/graph'
     | '/batches/$batchId'
   id:
     | '__root__'
@@ -106,6 +117,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/batches/$batchId'
     | '/sitemap/xml'
+    | '/batches/$batchId/graph'
     | '/batches/$batchId/'
   fileRoutesById: FileRoutesById
 }
@@ -169,14 +181,23 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BatchesBatchIdIndexRouteImport
       parentRoute: typeof BatchesBatchIdRoute
     }
+    '/batches/$batchId/graph': {
+      id: '/batches/$batchId/graph'
+      path: '/graph'
+      fullPath: '/batches/$batchId/graph'
+      preLoaderRoute: typeof BatchesBatchIdGraphRouteImport
+      parentRoute: typeof BatchesBatchIdRoute
+    }
   }
 }
 
 interface BatchesBatchIdRouteChildren {
+  BatchesBatchIdGraphRoute: typeof BatchesBatchIdGraphRoute
   BatchesBatchIdIndexRoute: typeof BatchesBatchIdIndexRoute
 }
 
 const BatchesBatchIdRouteChildren: BatchesBatchIdRouteChildren = {
+  BatchesBatchIdGraphRoute: BatchesBatchIdGraphRoute,
   BatchesBatchIdIndexRoute: BatchesBatchIdIndexRoute,
 }
 
