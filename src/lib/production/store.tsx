@@ -149,6 +149,66 @@ export function ProductionProvider({ children }: { children: ReactNode }) {
     return id;
   }, []);
 
+  const addProduct = useCallback((name?: string) => {
+    const id = `p-${Math.random().toString(36).slice(2, 8)}`;
+    const semiId = `${id}-semi-1`;
+    const matId = `${id}-mat-1`;
+    const finalId = `${id}-out`;
+    setProducts((ps) => [
+      ...ps,
+      {
+        id,
+        name: name?.trim() || `Изделие ${ps.length + 1}`,
+        version: "v1.0",
+        note: "Новое изделие — заполните тех.маршрут и компоненты",
+        assembledOperationId: `${id}-op-2`,
+        testedOperationId: `${id}-op-2`,
+        operationGroups: [],
+        components: [
+          {
+            id: matId,
+            name: "Материал (заготовка)",
+            type: "material",
+            positions: [
+              { id: `${matId}-pos-1`, name: "Позиция 1", quantityPerUnit: 1, stock: 0, leadTimeDays: 14 },
+            ],
+          },
+          {
+            id: semiId,
+            name: "Полуфабрикат после операции 1",
+            type: "semi-product",
+            positions: [],
+            producedByOperationId: `${id}-op-1`,
+          },
+          { id: finalId, name: "Готовое изделие", type: "material", positions: [] },
+        ],
+        operations: [
+          {
+            id: `${id}-op-1`,
+            name: "Операция 1",
+            responsible: "—",
+            durationHours: 8,
+            order: 1,
+            inputComponentIds: [matId],
+            outputComponentId: semiId,
+          },
+          {
+            id: `${id}-op-2`,
+            name: "Операция 2",
+            responsible: "—",
+            durationHours: 8,
+            order: 2,
+            inputComponentIds: [semiId],
+            outputComponentId: null,
+          },
+        ],
+      },
+    ]);
+    return id;
+  }, []);
+
+
+
   const importState = useCallback((s: { products: Product[]; batches: Batch[] }) => {
     if (Array.isArray(s.products)) setProducts(s.products);
     if (Array.isArray(s.batches)) setBatches(s.batches);
