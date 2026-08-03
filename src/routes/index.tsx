@@ -1,7 +1,9 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { AlertTriangle, ArrowRight, CalendarClock } from "lucide-react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
+import { AlertTriangle, ArrowRight, CalendarClock, Plus } from "lucide-react";
 import { useProduction } from "@/lib/production/store";
 import type { Batch, BatchHealth, Summary } from "@/lib/production/types";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
