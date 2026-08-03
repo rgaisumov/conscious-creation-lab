@@ -20,11 +20,21 @@ function GraphPage() {
   const sorted = [...product.operations].sort((a, b) => a.order - b.order);
   const computedById = new Map(summary.operations.map((o) => [o.operationId, o]));
   const compById = new Map(product.components.map((c) => [c.id, c]));
+  const indexOfOp = new Map(sorted.map((o, i) => [o.id, i + 1]));
+  /** operationId that produces a given component */
+  const producerOpByComponent = new Map<string, string>();
+  for (const op of sorted) if (op.outputComponentId) producerOpByComponent.set(op.outputComponentId, op.id);
+  /** first operation that consumes a given component */
+  const consumerOpByComponent = new Map<string, string>();
+  for (const op of sorted)
+    for (const cid of op.inputComponentIds)
+      if (!consumerOpByComponent.has(cid)) consumerOpByComponent.set(cid, op.id);
 
   return (
     <div className="p-6">
       <p className="mb-4 text-xs text-muted-foreground">
-        Граф изделия: слева входы операции, справа результат. Выделение синхронизировано с тех.маршрутом.
+        Граф изделия: слева все закупаемые компоненты операции, справа результат. Полуфабрикаты не показываются
+        отдельными карточками — вместо них стрелка от операции-изготовителя. Выделение синхронизировано с тех.маршрутом.
       </p>
 
       <div className="space-y-4">
@@ -32,13 +42,25 @@ function GraphPage() {
           const oc = computedById.get(op.id);
           if (!oc) return null;
           const meta = STATUS_META[oc.status];
-          const output = op.outputComponentId ? compById.get(op.outputComponentId) : undefined;
+          const outputRaw = op.outputComponentId ? compById.get(op.outputComponentId) : undefined;
+          const output = outputRaw && outputRaw.type !== "semi-product" ? outputRaw : undefined;
+          const outputSemi = outputRaw && outputRaw.type === "semi-product" ? outputRaw : undefined;
+          const consumerOpId = outputSemi ? consumerOpByComponent.get(outputSemi.id) : undefined;
           const active = selection?.kind === "operation" && selection.id === op.id;
+
+          const materialInputs = op.inputComponentIds.filter(
+            (cid) => compById.get(cid)?.type !== "semi-product",
+          );
+          const semiSources = op.inputComponentIds
+            .map((cid) => compById.get(cid))
+            .filter((c) => c && c.type === "semi-product")
+            .map((c) => ({ comp: c!, opId: producerOpByComponent.get(c!.id) }))
+            .filter((s) => s.opId);
 
           return (
             <div key={op.id} className="flex flex-wrap items-stretch gap-3">
               <div className="flex w-64 shrink-0 flex-col gap-1.5">
-                {op.inputComponentIds.map((cid) => {
+                {materialInputs.map((cid) => {
                   const c = compById.get(cid);
                   if (!c) return null;
                   const units = componentUnitsAvailable(c);
@@ -59,14 +81,27 @@ function GraphPage() {
                     </button>
                   );
                 })}
-                {op.inputComponentIds.length === 0 && (
+                {materialInputs.length === 0 && (
                   <div className="rounded-md border border-dashed border-border px-2.5 py-1.5 text-xs text-muted-foreground">
-                    без входов
+                    без закупаемых компонентов
                   </div>
                 )}
               </div>
 
-              <div className="flex items-center text-muted-foreground">→</div>
+              <div className="flex flex-col items-start justify-center gap-1 text-muted-foreground">
+                <span>→</span>
+                {semiSources.map((s) => (
+                  <button
+                    key={s.comp.id}
+                    type="button"
+                    onClick={() => select({ kind: "operation", id: s.opId! })}
+                    className="whitespace-nowrap rounded border border-dashed border-border px-1.5 py-0.5 text-[10px] hover:border-primary/40 hover:text-foreground"
+                    title={s.comp.name}
+                  >
+                    ↳ из оп. {indexOfOp.get(s.opId!)}
+                  </button>
+                ))}
+              </div>
 
               <button
                 type="button"
@@ -98,6 +133,15 @@ function GraphPage() {
                   >
                     {output.name}
                     <span className="ml-1 text-[10px] text-muted-foreground">{TYPE_LABEL[output.type]}</span>
+                  </button>
+                ) : outputSemi && consumerOpId ? (
+                  <button
+                    type="button"
+                    onClick={() => select({ kind: "operation", id: consumerOpId })}
+                    className="w-full rounded-md border border-dashed border-border px-2.5 py-1.5 text-left text-xs text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                    title={outputSemi.name}
+                  >
+                    → в оп. {indexOfOp.get(consumerOpId)}
                   </button>
                 ) : (
                   <div className="w-full rounded-md border border-dashed border-border px-2.5 py-1.5 text-xs text-muted-foreground">
