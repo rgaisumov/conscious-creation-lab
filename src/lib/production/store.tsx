@@ -28,6 +28,8 @@ type Ctx = {
   updatePosition: (productId: string, componentId: string, positionId: string, patch: Partial<Position>) => void;
   updateFixtureCount: (productId: string, componentId: string, n: number) => void;
   addBatch: (productId: string) => string;
+  addProduct: (name?: string) => string;
+
   importState: (s: { products: Product[]; batches: Batch[] }) => void;
   exportState: () => { products: Product[]; batches: Batch[] };
 };
