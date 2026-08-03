@@ -21,23 +21,36 @@ export const Route = createFileRoute("/products")({
 });
 
 function ProductsPage() {
-  const { products, batches, addBatch, summaryOf } = useProduction();
+  const { products, batches, addProduct, summaryOf } = useProduction();
   const navigate = useNavigate();
 
   return (
     <div className="flex-1 min-h-0 overflow-auto">
-      <header className="border-b border-border px-6 py-4">
-        <h1 className="text-lg font-semibold">Изделия</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Изделие хранит знание о производстве, партия — его исполнение.
-        </p>
+      <header className="flex flex-wrap items-start justify-between gap-3 border-b border-border px-6 py-4">
+        <div>
+          <h1 className="text-lg font-semibold">Изделия</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Изделие хранит знание о производстве, партия — его исполнение.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            const id = addProduct();
+            navigate({ to: "/products", hash: id });
+          }}
+          className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Новое изделие
+        </button>
       </header>
 
       <div className="space-y-4 p-6">
         {products.map((p) => {
           const own = batches.filter((b) => b.productId === p.id);
           return (
-            <section key={p.id} className="rounded-lg border border-border bg-card p-4">
+            <section key={p.id} id={p.id} className="rounded-lg border border-border bg-card p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <h2 className="text-sm font-semibold text-card-foreground">
@@ -48,18 +61,8 @@ function ProductsPage() {
                     {p.note ? ` · ${p.note}` : ""}
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const id = addBatch(p.id);
-                    navigate({ to: "/batches/$batchId", params: { batchId: id } });
-                  }}
-                  className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  Новая партия
-                </button>
               </div>
+
 
               <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
                 {own.map((b) => {

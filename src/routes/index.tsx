@@ -1,7 +1,9 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { AlertTriangle, ArrowRight, CalendarClock } from "lucide-react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
+import { AlertTriangle, ArrowRight, CalendarClock, Plus } from "lucide-react";
 import { useProduction } from "@/lib/production/store";
 import type { Batch, BatchHealth, Summary } from "@/lib/production/types";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -86,7 +88,9 @@ function BatchCard({ batch, summary, productName }: { batch: Batch; summary: Sum
 }
 
 function ProductionDashboard() {
-  const { batches, getProduct, summaryOf } = useProduction();
+  const { batches, products, getProduct, summaryOf, addBatch } = useProduction();
+  const navigate = useNavigate();
+  const [productId, setProductId] = useState(products[0]?.id ?? "");
 
   const rows = batches
     .map((b) => ({ batch: b, summary: summaryOf(b), product: getProduct(b.productId) }))
@@ -100,14 +104,43 @@ function ProductionDashboard() {
 
   return (
     <div className="flex-1 min-h-0 overflow-auto">
-      <header className="border-b border-border px-6 py-4">
-        <h1 className="text-lg font-semibold">Производство</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {rows.length} партий в работе · {blocked} с блокерами · {late} с отставанием
-        </p>
+      <header className="flex flex-wrap items-start justify-between gap-3 border-b border-border px-6 py-4">
+        <div>
+          <h1 className="text-lg font-semibold">Производство</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {rows.length} партий в работе · {blocked} с блокерами · {late} с отставанием
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <select
+            value={productId}
+            onChange={(e) => setProductId(e.target.value)}
+            className="rounded-md border border-border bg-background px-2 py-1.5 text-xs text-foreground"
+            aria-label="Изделие для новой партии"
+          >
+            {products.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name} · {p.version}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            disabled={!productId}
+            onClick={() => {
+              const id = addBatch(productId);
+              navigate({ to: "/batches/$batchId", params: { batchId: id } });
+            }}
+            className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Новая партия
+          </button>
+        </div>
       </header>
 
       <div className="grid gap-4 p-6 sm:grid-cols-2 xl:grid-cols-3">
+
         {rows.map((r) => (
           <BatchCard
             key={r.batch.id}
