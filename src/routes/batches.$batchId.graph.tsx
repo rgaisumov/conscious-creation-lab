@@ -20,11 +20,21 @@ function GraphPage() {
   const sorted = [...product.operations].sort((a, b) => a.order - b.order);
   const computedById = new Map(summary.operations.map((o) => [o.operationId, o]));
   const compById = new Map(product.components.map((c) => [c.id, c]));
+  const indexOfOp = new Map(sorted.map((o, i) => [o.id, i + 1]));
+  /** operationId that produces a given component */
+  const producerOpByComponent = new Map<string, string>();
+  for (const op of sorted) if (op.outputComponentId) producerOpByComponent.set(op.outputComponentId, op.id);
+  /** first operation that consumes a given component */
+  const consumerOpByComponent = new Map<string, string>();
+  for (const op of sorted)
+    for (const cid of op.inputComponentIds)
+      if (!consumerOpByComponent.has(cid)) consumerOpByComponent.set(cid, op.id);
 
   return (
     <div className="p-6">
       <p className="mb-4 text-xs text-muted-foreground">
-        Граф изделия: слева входы операции, справа результат. Выделение синхронизировано с тех.маршрутом.
+        Граф изделия: слева все закупаемые компоненты операции, справа результат. Полуфабрикаты не показываются
+        отдельными карточками — вместо них стрелка от операции-изготовителя. Выделение синхронизировано с тех.маршрутом.
       </p>
 
       <div className="space-y-4">
