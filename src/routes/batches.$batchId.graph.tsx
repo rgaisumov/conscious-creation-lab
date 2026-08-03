@@ -152,9 +152,6 @@ function GraphPage() {
             </div>
           );
         })}
-            </div>
-          );
-        })}
       </div>
     </div>
   );
