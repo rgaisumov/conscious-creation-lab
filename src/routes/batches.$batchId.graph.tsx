@@ -42,13 +42,25 @@ function GraphPage() {
           const oc = computedById.get(op.id);
           if (!oc) return null;
           const meta = STATUS_META[oc.status];
-          const output = op.outputComponentId ? compById.get(op.outputComponentId) : undefined;
+          const outputRaw = op.outputComponentId ? compById.get(op.outputComponentId) : undefined;
+          const output = outputRaw && outputRaw.type !== "semi-product" ? outputRaw : undefined;
+          const outputSemi = outputRaw && outputRaw.type === "semi-product" ? outputRaw : undefined;
+          const consumerOpId = outputSemi ? consumerOpByComponent.get(outputSemi.id) : undefined;
           const active = selection?.kind === "operation" && selection.id === op.id;
+
+          const materialInputs = op.inputComponentIds.filter(
+            (cid) => compById.get(cid)?.type !== "semi-product",
+          );
+          const semiSources = op.inputComponentIds
+            .map((cid) => compById.get(cid))
+            .filter((c) => c && c.type === "semi-product")
+            .map((c) => ({ comp: c!, opId: producerOpByComponent.get(c!.id) }))
+            .filter((s) => s.opId);
 
           return (
             <div key={op.id} className="flex flex-wrap items-stretch gap-3">
               <div className="flex w-64 shrink-0 flex-col gap-1.5">
-                {op.inputComponentIds.map((cid) => {
+                {materialInputs.map((cid) => {
                   const c = compById.get(cid);
                   if (!c) return null;
                   const units = componentUnitsAvailable(c);
@@ -69,14 +81,27 @@ function GraphPage() {
                     </button>
                   );
                 })}
-                {op.inputComponentIds.length === 0 && (
+                {materialInputs.length === 0 && (
                   <div className="rounded-md border border-dashed border-border px-2.5 py-1.5 text-xs text-muted-foreground">
-                    без входов
+                    без закупаемых компонентов
                   </div>
                 )}
               </div>
 
-              <div className="flex items-center text-muted-foreground">→</div>
+              <div className="flex flex-col items-start justify-center gap-1 text-muted-foreground">
+                <span>→</span>
+                {semiSources.map((s) => (
+                  <button
+                    key={s.comp.id}
+                    type="button"
+                    onClick={() => select({ kind: "operation", id: s.opId! })}
+                    className="whitespace-nowrap rounded border border-dashed border-border px-1.5 py-0.5 text-[10px] hover:border-primary/40 hover:text-foreground"
+                    title={s.comp.name}
+                  >
+                    ↳ из оп. {indexOfOp.get(s.opId!)}
+                  </button>
+                ))}
+              </div>
 
               <button
                 type="button"
@@ -109,12 +134,24 @@ function GraphPage() {
                     {output.name}
                     <span className="ml-1 text-[10px] text-muted-foreground">{TYPE_LABEL[output.type]}</span>
                   </button>
+                ) : outputSemi && consumerOpId ? (
+                  <button
+                    type="button"
+                    onClick={() => select({ kind: "operation", id: consumerOpId })}
+                    className="w-full rounded-md border border-dashed border-border px-2.5 py-1.5 text-left text-xs text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                    title={outputSemi.name}
+                  >
+                    → в оп. {indexOfOp.get(consumerOpId)}
+                  </button>
                 ) : (
                   <div className="w-full rounded-md border border-dashed border-border px-2.5 py-1.5 text-xs text-muted-foreground">
                     готовое изделие
                   </div>
                 )}
               </div>
+            </div>
+          );
+        })}
             </div>
           );
         })}
