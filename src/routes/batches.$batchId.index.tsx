@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, Pencil, RotateCcw } from "lucide-react";
 import { useWorkspace } from "@/lib/production/workspace";
+import { useProduction } from "@/lib/production/store";
+import { RouteEditor } from "@/components/route/RouteEditor";
 import { AVAILABILITY_DOT, AVAILABILITY_RANK, STATUS_META, fmtQty } from "@/components/batch/status";
 import type { OperationComputed } from "@/lib/production/types";
 
@@ -10,8 +12,10 @@ export const Route = createFileRoute("/batches/$batchId/")({
 });
 
 function TechRoutePage() {
-  const { product, summary, selection, select } = useWorkspace();
+  const { product, batch, summary, selection, select } = useWorkspace();
+  const { resetBatchRoute } = useProduction();
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+  const [editing, setEditing] = useState(false);
 
   const sorted = [...product.operations].sort((a, b) => a.order - b.order);
   const computedById = new Map(summary.operations.map((o) => [o.operationId, o]));
@@ -30,12 +34,52 @@ function TechRoutePage() {
     }
   }
 
+  const editBar = (
+    <div className="mb-3 flex flex-wrap items-center gap-2">
+      <button
+        type="button"
+        onClick={() => setEditing((v) => !v)}
+        className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs ${
+          editing ? "border-primary text-primary" : "border-border text-muted-foreground hover:text-foreground"
+        }`}
+      >
+        <Pencil className="h-3.5 w-3.5" />
+        {editing ? "Готово" : "Редактировать маршрут"}
+      </button>
+      {batch.routeOverride && (
+        <>
+          <span className="text-[11px] text-muted-foreground">
+            маршрут изменён только для этой партии
+          </span>
+          <button
+            type="button"
+            onClick={() => resetBatchRoute(batch.id)}
+            className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground"
+          >
+            <RotateCcw className="h-3 w-3" /> вернуть маршрут изделия
+          </button>
+        </>
+      )}
+    </div>
+  );
+
+  if (editing) {
+    return (
+      <div className="p-6">
+        {editBar}
+        <RouteEditor target={{ kind: "batch", batchId: batch.id }} />
+      </div>
+    );
+  }
+
   return (
     <div className="p-6">
+      {editBar}
       <div className="rounded-lg border border-border bg-card/40">
         <div className="border-b border-border px-4 py-2.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
           Технологический маршрут
         </div>
+
 
         <div className="p-3">
           {items.map((item, idx) => {
