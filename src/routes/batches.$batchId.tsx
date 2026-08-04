@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet, Link, useRouterState } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
-import { useProduction } from "@/lib/production/store";
+import { effectiveProductFor, useProduction } from "@/lib/production/store";
 import { BatchWorkspaceProvider, useWorkspace } from "@/lib/production/workspace";
 import { RightPanel } from "@/components/batch/RightPanel";
 
@@ -26,7 +26,9 @@ function BatchLayout() {
   const { batchId } = Route.useParams();
   const { getBatch, getProduct } = useProduction();
   const batch = getBatch(batchId);
-  const product = batch ? getProduct(batch.productId) : undefined;
+  const base = batch ? getProduct(batch.productId) : undefined;
+  const product = batch && base ? effectiveProductFor(base, batch) : undefined;
+
 
   if (!batch || !product) {
     return (
