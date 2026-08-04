@@ -26,7 +26,9 @@ function BatchLayout() {
   const { batchId } = Route.useParams();
   const { getBatch, getProduct } = useProduction();
   const batch = getBatch(batchId);
-  const product = batch ? getProduct(batch.productId) : undefined;
+  const base = batch ? getProduct(batch.productId) : undefined;
+  const product = batch && base ? effectiveProductFor(base, batch) : undefined;
+
 
   if (!batch || !product) {
     return (
