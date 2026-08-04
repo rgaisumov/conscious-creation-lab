@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 import { useProduction } from "@/lib/production/store";
 
-export const Route = createFileRoute("/products")({
+export const Route = createFileRoute("/products/")({
   head: () => ({
     meta: [
       { title: "Изделия — конструкторские данные и партии" },
@@ -61,6 +61,13 @@ function ProductsPage() {
                     {p.note ? ` · ${p.note}` : ""}
                   </p>
                 </div>
+                <Link
+                  to="/products/$productId"
+                  params={{ productId: p.id }}
+                  className="rounded-md border border-border px-2.5 py-1.5 text-xs text-muted-foreground hover:border-primary hover:text-primary"
+                >
+                  Редактировать тех.маршрут / граф
+                </Link>
               </div>
 
 
