@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { useWorkspace } from "@/lib/production/workspace";
-import { AVAILABILITY_CHIP, AVAILABILITY_RANK, STATUS_META, fmtQty } from "@/components/batch/status";
+import { AVAILABILITY_DOT, AVAILABILITY_RANK, STATUS_META, fmtQty } from "@/components/batch/status";
 import type { OperationComputed } from "@/lib/production/types";
 
 export const Route = createFileRoute("/batches/$batchId/")({
@@ -15,11 +15,9 @@ function TechRoutePage() {
 
   const sorted = [...product.operations].sort((a, b) => a.order - b.order);
   const computedById = new Map(summary.operations.map((o) => [o.operationId, o]));
+  const opById = new Map(product.operations.map((o) => [o.id, o]));
 
-  // Собираем ленту: одиночные операции и свёрнутые группы (OG003).
-  type Item =
-    | { kind: "op"; opId: string }
-    | { kind: "group"; groupId: string };
+  type Item = { kind: "op"; opId: string } | { kind: "group"; groupId: string };
   const items: Item[] = [];
   const seenGroups = new Set<string>();
   for (const op of sorted) {
@@ -34,82 +32,92 @@ function TechRoutePage() {
 
   return (
     <div className="p-6">
-      <div className="mx-auto max-w-3xl space-y-3">
-        {items.map((item, idx) => {
-          if (item.kind === "op") {
-            const oc = computedById.get(item.opId);
-            const op = sorted.find((o) => o.id === item.opId)!;
-            if (!oc) return null;
+      <div className="rounded-lg border border-border bg-card/40">
+        <div className="border-b border-border px-4 py-2.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+          Технологический маршрут
+        </div>
+
+        <div className="p-3">
+          {items.map((item, idx) => {
+            if (item.kind === "op") {
+              const oc = computedById.get(item.opId);
+              const op = opById.get(item.opId);
+              if (!oc || !op) return null;
+              return (
+                <div key={item.opId}>
+                  <OperationRow
+                    index={idx + 1}
+                    name={op.name}
+                    responsible={op.responsible}
+                    durationHours={op.durationHours}
+                    oc={oc}
+                    batchSize={summary.batchSize}
+                    active={selection?.kind === "operation" && selection.id === op.id}
+                    onSelect={() => select({ kind: "operation", id: op.id })}
+                    onSelectComponent={(id) => select({ kind: "component", id })}
+                  />
+                  {idx < items.length - 1 && <Connector />}
+                </div>
+              );
+            }
+
+            const g = summary.groups.find((x) => x.groupId === item.groupId);
+            if (!g) return null;
+            const open = openGroups[g.groupId] ?? false;
+            const meta = STATUS_META[g.status];
             return (
-              <div key={item.opId}>
-                <OperationCard
-                  index={idx + 1}
-                  name={op.name}
-                  responsible={op.responsible}
-                  oc={oc}
-                  batchSize={summary.batchSize}
-                  active={selection?.kind === "operation" && selection.id === op.id}
-                  onSelect={() => select({ kind: "operation", id: op.id })}
-                  onSelectComponent={(id) => select({ kind: "component", id })}
-                />
+              <div key={g.groupId}>
+                <div className={`rounded-md border border-l-2 border-border bg-card ${meta.ring}`}>
+                  <button
+                    type="button"
+                    onClick={() => setOpenGroups((s) => ({ ...s, [g.groupId]: !open }))}
+                    className="flex w-full items-center gap-3 px-4 py-3 text-left"
+                  >
+                    {open ? (
+                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                    )}
+                    <span className="text-xs text-muted-foreground tabular-nums">{idx + 1}</span>
+                    <span className="flex-1 text-sm font-medium text-card-foreground">
+                      {g.name}
+                      <span className="ml-2 text-xs font-normal text-muted-foreground">
+                        {g.operationIds.length} операций
+                      </span>
+                    </span>
+                    <span className={`rounded border px-2 py-0.5 text-[10px] uppercase ${meta.badge}`}>
+                      {meta.short}
+                    </span>
+                  </button>
+                  {open && (
+                    <div className="space-y-2 border-t border-border p-2">
+                      {g.operationIds.map((opId, i) => {
+                        const oc = computedById.get(opId);
+                        const op = opById.get(opId);
+                        if (!oc || !op) return null;
+                        return (
+                          <OperationRow
+                            key={opId}
+                            index={`${idx + 1}.${i + 1}`}
+                            name={op.name}
+                            responsible={op.responsible}
+                            durationHours={op.durationHours}
+                            oc={oc}
+                            batchSize={summary.batchSize}
+                            active={selection?.kind === "operation" && selection.id === op.id}
+                            onSelect={() => select({ kind: "operation", id: op.id })}
+                            onSelectComponent={(id) => select({ kind: "component", id })}
+                          />
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
                 {idx < items.length - 1 && <Connector />}
               </div>
             );
-          }
-
-          const g = summary.groups.find((x) => x.groupId === item.groupId);
-          if (!g) return null;
-          const open = openGroups[g.groupId] ?? false;
-          const meta = STATUS_META[g.status];
-          return (
-            <div key={g.groupId}>
-              <div className={`rounded-lg border border-border border-l-4 bg-card ${meta.ring}`}>
-                <button
-                  type="button"
-                  onClick={() => setOpenGroups((s) => ({ ...s, [g.groupId]: !open }))}
-                  className="flex w-full items-center gap-3 px-4 py-3 text-left"
-                >
-                  {open ? (
-                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                  ) : (
-                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                  )}
-                  <span className="text-xs text-muted-foreground tabular-nums">{idx + 1}</span>
-                  <span className="flex-1 text-sm font-medium text-card-foreground">
-                    {g.name}
-                    <span className="ml-2 text-xs font-normal text-muted-foreground">
-                      {g.operationIds.length} операций
-                    </span>
-                  </span>
-                  <span className={`rounded border px-2 py-0.5 text-[11px] ${meta.badge}`}>{meta.short}</span>
-                </button>
-                {open && (
-                  <div className="space-y-2 border-t border-border p-3">
-                    {g.operationIds.map((opId, i) => {
-                      const oc = computedById.get(opId);
-                      const op = sorted.find((o) => o.id === opId);
-                      if (!oc || !op) return null;
-                      return (
-                        <OperationCard
-                          key={opId}
-                          index={`${idx + 1}.${i + 1}`}
-                          name={op.name}
-                          responsible={op.responsible}
-                          oc={oc}
-                          batchSize={summary.batchSize}
-                          active={selection?.kind === "operation" && selection.id === op.id}
-                          onSelect={() => select({ kind: "operation", id: op.id })}
-                          onSelectComponent={(id) => select({ kind: "component", id })}
-                        />
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-              {idx < items.length - 1 && <Connector />}
-            </div>
-          );
-        })}
+          })}
+        </div>
 
         <Legend />
       </div>
@@ -118,13 +126,26 @@ function TechRoutePage() {
 }
 
 function Connector() {
-  return <div className="mx-auto my-1 h-4 w-px bg-border" />;
+  return (
+    <div className="flex h-6 items-center justify-center">
+      <span className="text-sm leading-none text-muted-foreground">↓</span>
+    </div>
+  );
 }
 
-function OperationCard({
+function Bar({ pct, className }: { pct: number; className: string }) {
+  return (
+    <div className="h-1.5 w-full overflow-hidden rounded-sm bg-muted">
+      <div className={`h-full ${className}`} style={{ width: `${Math.min(100, Math.max(0, pct))}%` }} />
+    </div>
+  );
+}
+
+function OperationRow({
   index,
   name,
   responsible,
+  durationHours,
   oc,
   batchSize,
   active,
@@ -134,6 +155,7 @@ function OperationCard({
   index: number | string;
   name: string;
   responsible: string;
+  durationHours: number;
   oc: OperationComputed;
   batchSize: number;
   active: boolean;
@@ -141,10 +163,16 @@ function OperationCard({
   onSelectComponent: (id: string) => void;
 }) {
   const meta = STATUS_META[oc.status];
-  const pct = batchSize > 0 ? Math.round((oc.completed / batchSize) * 100) : 0;
-  const reqs = [...oc.requirements].sort(
-    (a, b) => AVAILABILITY_RANK[a.availability] - AVAILABILITY_RANK[b.availability],
-  );
+  const donePct = batchSize > 0 ? (oc.completed / batchSize) * 100 : 0;
+  const canDo = Number.isFinite(oc.canPerformNow) ? oc.canPerformNow : batchSize;
+  const canPct = batchSize > 0 ? (canDo / batchSize) * 100 : 0;
+  const highlight = oc.status === "blocked" || oc.status === "next" || oc.status === "waiting";
+
+  // Полуфабрикаты не отображаем: их наличие = число выполненных операций-изготовителей.
+  const reqs = [...oc.requirements]
+    .filter((r) => r.type !== "semi-product")
+    .sort((a, b) => AVAILABILITY_RANK[a.availability] - AVAILABILITY_RANK[b.availability]);
+  const okCount = reqs.filter((r) => r.availability === "full").length;
 
   return (
     <div
@@ -152,48 +180,89 @@ function OperationCard({
       tabIndex={0}
       onClick={onSelect}
       onKeyDown={(e) => e.key === "Enter" && onSelect()}
-      className={`cursor-pointer rounded-lg border border-l-4 bg-card p-4 transition-colors ${meta.ring} ${
-        active ? "border-primary" : "border-border hover:border-primary/40"
-      }`}
+      className={`grid cursor-pointer grid-cols-1 overflow-hidden rounded-md border transition-colors md:grid-cols-[1.1fr_1.2fr_1.6fr_auto] ${
+        active
+          ? "border-primary"
+          : highlight
+            ? `${meta.ring.replace("border-l-", "border-")} hover:border-primary/50`
+            : "border-border hover:border-primary/40"
+      } bg-card`}
     >
-      <div className="flex items-start gap-3">
-        <span className="mt-0.5 text-xs text-muted-foreground tabular-nums">{index}</span>
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm font-medium text-card-foreground">{name}</span>
-            <span className={`rounded border px-2 py-0.5 text-[11px] ${meta.badge}`}>{meta.short}</span>
+      {/* Колонка 1 — операция */}
+      <div className="flex gap-3 p-4 md:border-r md:border-border">
+        <span
+          className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded border text-[11px] tabular-nums ${meta.badge}`}
+        >
+          {index}
+        </span>
+        <div className="min-w-0">
+          <div className={`text-sm font-medium ${highlight ? "text-card-foreground" : "text-card-foreground"}`}>
+            {index}. {name}
           </div>
-          <div className="mt-0.5 text-xs text-muted-foreground">
-            {responsible} · {oc.reason}
-          </div>
+          <div className="mt-1.5 text-xs text-muted-foreground">{responsible}</div>
+          <div className="text-xs text-muted-foreground">время операции: {durationHours} ч</div>
+        </div>
+      </div>
 
-          <div className="mt-2 flex items-center gap-2">
-            <div className="h-1.5 flex-1 overflow-hidden rounded bg-muted">
-              <div className={`h-full ${meta.bar}`} style={{ width: `${pct}%` }} />
-            </div>
-            <span className="text-[11px] tabular-nums text-muted-foreground">
-              {oc.completed}/{batchSize}
+      {/* Колонка 2 — прогресс */}
+      <div className="space-y-2.5 p-4 md:border-r md:border-border">
+        <div>
+          <div className="flex items-baseline justify-between text-xs">
+            <span className="text-muted-foreground">Выполнено</span>
+            <span className="tabular-nums text-card-foreground">
+              {oc.completed} / {batchSize}
             </span>
           </div>
-
-          {reqs.length > 0 && (
-            <div className="mt-2.5 flex flex-wrap gap-1.5">
-              {reqs.map((r) => (
-                <button
-                  key={r.componentId}
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onSelectComponent(r.componentId);
-                  }}
-                  className={`rounded border px-2 py-0.5 text-[11px] ${AVAILABILITY_CHIP[r.availability]}`}
-                >
-                  {r.componentName} {fmtQty(r.available)}/{fmtQty(r.required)}
-                </button>
-              ))}
-            </div>
-          )}
+          <div className="mt-1.5">
+            <Bar pct={donePct} className={meta.bar} />
+          </div>
         </div>
+        <div>
+          <div className="flex items-baseline justify-between text-xs">
+            <span className="text-muted-foreground">Можно выполнить</span>
+            <span className="tabular-nums text-card-foreground">
+              {fmtQty(oc.canPerformNow)} / {batchSize}
+            </span>
+          </div>
+          <div className="mt-1.5">
+            <Bar pct={canPct} className={meta.bar} />
+          </div>
+        </div>
+      </div>
+
+      {/* Колонка 3 — требуется для запуска */}
+      <div className="p-4 md:border-r md:border-border">
+        <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+          Требуется для запуска ({okCount} из {reqs.length})
+        </div>
+        <div className="mt-2 space-y-1.5">
+          {reqs.length === 0 && <div className="text-xs text-muted-foreground">— закупаемых компонентов нет</div>}
+          {reqs.map((r) => (
+            <button
+              key={r.componentId}
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onSelectComponent(r.componentId);
+              }}
+              className="flex w-full items-center gap-2 text-left text-xs hover:opacity-80"
+            >
+              <span className="min-w-0 flex-1 truncate text-card-foreground">{r.componentName}</span>
+              <span className="shrink-0 tabular-nums text-muted-foreground">
+                {fmtQty(r.available)} / {fmtQty(r.required)}
+              </span>
+              <span className={`h-2 w-2 shrink-0 rounded-full ${AVAILABILITY_DOT[r.availability]}`} />
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Колонка 4 — статус */}
+      <div className="flex min-w-44 flex-col items-start gap-1.5 p-4 md:items-end md:text-right">
+        <span className={`rounded border px-2 py-0.5 text-[10px] font-medium uppercase ${meta.badge}`}>
+          {meta.short}
+        </span>
+        <div className="text-xs text-muted-foreground">{oc.reason}</div>
       </div>
     </div>
   );
@@ -202,7 +271,8 @@ function OperationCard({
 function Legend() {
   const order = ["blocked", "next", "waiting", "ready", "running", "done"] as const;
   return (
-    <div className="mt-6 flex flex-wrap gap-x-4 gap-y-1.5 border-t border-border pt-4 text-[11px] text-muted-foreground">
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-border px-4 py-3 text-[11px] text-muted-foreground">
+      <span className="uppercase tracking-wider">Легенда:</span>
       {order.map((k) => (
         <span key={k} className="flex items-center gap-1.5">
           <span className={`h-2 w-2 rounded-full ${STATUS_META[k].dot}`} />
