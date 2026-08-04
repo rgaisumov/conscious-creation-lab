@@ -14,6 +14,7 @@ import { Route as ProductsRouteImport } from './routes/products'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProductsIndexRouteImport } from './routes/products.index'
 import { Route as SitemapXmlRouteImport } from './routes/sitemap.xml'
+import { Route as ProductsProductIdRouteImport } from './routes/products.$productId'
 import { Route as BatchesBatchIdRouteImport } from './routes/batches.$batchId'
 import { Route as BatchesBatchIdIndexRouteImport } from './routes/batches.$batchId.index'
 import { Route as BatchesBatchIdGraphRouteImport } from './routes/batches.$batchId.graph'
@@ -44,6 +45,11 @@ const SitemapXmlRoute = SitemapXmlRouteImport.update({
   path: '/sitemap/xml',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProductsProductIdRoute = ProductsProductIdRouteImport.update({
+  id: '/$productId',
+  path: '/$productId',
+  getParentRoute: () => ProductsRoute,
+} as any)
 const BatchesBatchIdRoute = BatchesBatchIdRouteImport.update({
   id: '/batches/$batchId',
   path: '/batches/$batchId',
@@ -71,6 +77,7 @@ export interface FileRoutesByFullPath {
   '/products': typeof ProductsRouteWithChildren
   '/settings': typeof SettingsRoute
   '/batches/$batchId': typeof BatchesBatchIdRouteWithChildren
+  '/products/$productId': typeof ProductsProductIdRoute
   '/sitemap/xml': typeof SitemapXmlRoute
   '/products/': typeof ProductsIndexRoute
   '/batches/$batchId/components': typeof BatchesBatchIdComponentsRoute
@@ -80,6 +87,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/settings': typeof SettingsRoute
+  '/products/$productId': typeof ProductsProductIdRoute
   '/sitemap/xml': typeof SitemapXmlRoute
   '/products': typeof ProductsIndexRoute
   '/batches/$batchId/components': typeof BatchesBatchIdComponentsRoute
@@ -92,6 +100,7 @@ export interface FileRoutesById {
   '/products': typeof ProductsRouteWithChildren
   '/settings': typeof SettingsRoute
   '/batches/$batchId': typeof BatchesBatchIdRouteWithChildren
+  '/products/$productId': typeof ProductsProductIdRoute
   '/sitemap/xml': typeof SitemapXmlRoute
   '/products/': typeof ProductsIndexRoute
   '/batches/$batchId/components': typeof BatchesBatchIdComponentsRoute
@@ -105,6 +114,7 @@ export interface FileRouteTypes {
     | '/products'
     | '/settings'
     | '/batches/$batchId'
+    | '/products/$productId'
     | '/sitemap/xml'
     | '/products/'
     | '/batches/$batchId/components'
@@ -114,6 +124,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/settings'
+    | '/products/$productId'
     | '/sitemap/xml'
     | '/products'
     | '/batches/$batchId/components'
@@ -125,6 +136,7 @@ export interface FileRouteTypes {
     | '/products'
     | '/settings'
     | '/batches/$batchId'
+    | '/products/$productId'
     | '/sitemap/xml'
     | '/products/'
     | '/batches/$batchId/components'
@@ -177,6 +189,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SitemapXmlRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/products/$productId': {
+      id: '/products/$productId'
+      path: '/$productId'
+      fullPath: '/products/$productId'
+      preLoaderRoute: typeof ProductsProductIdRouteImport
+      parentRoute: typeof ProductsRoute
+    }
     '/batches/$batchId': {
       id: '/batches/$batchId'
       path: '/batches/$batchId'
@@ -209,10 +228,12 @@ declare module '@tanstack/react-router' {
 }
 
 interface ProductsRouteChildren {
+  ProductsProductIdRoute: typeof ProductsProductIdRoute
   ProductsIndexRoute: typeof ProductsIndexRoute
 }
 
 const ProductsRouteChildren: ProductsRouteChildren = {
+  ProductsProductIdRoute: ProductsProductIdRoute,
   ProductsIndexRoute: ProductsIndexRoute,
 }
 
