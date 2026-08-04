@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet, Link, useRouterState } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
-import { useProduction } from "@/lib/production/store";
+import { effectiveProductFor, useProduction } from "@/lib/production/store";
 import { BatchWorkspaceProvider, useWorkspace } from "@/lib/production/workspace";
 import { RightPanel } from "@/components/batch/RightPanel";
 
