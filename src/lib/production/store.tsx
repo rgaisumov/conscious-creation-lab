@@ -35,6 +35,11 @@ type Ctx = {
   getProduct: (id: string) => Product | undefined;
   getBatch: (id: string) => Batch | undefined;
   summaryOf: (batch: Batch) => Summary;
+  /** Product knowledge for a batch, with batch-local route override applied. */
+  effectiveProduct: (batch: Batch) => Product;
+  getRoute: (target: RouteTarget) => RouteDraft | undefined;
+  mutateRoute: (target: RouteTarget, fn: (r: RouteDraft) => RouteDraft) => void;
+  resetBatchRoute: (batchId: string) => void;
   setCompleted: (batchId: string, operationId: string, n: number) => void;
   setShipped: (batchId: string, n: number) => void;
   setOrderedQty: (batchId: string, n: number) => void;
