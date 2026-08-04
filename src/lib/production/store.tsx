@@ -76,14 +76,60 @@ export function ProductionProvider({ children }: { children: ReactNode }) {
   const getProduct = useCallback((id: string) => products.find((p) => p.id === id), [products]);
   const getBatch = useCallback((id: string) => batches.find((b) => b.id === id), [batches]);
 
-  const summaryOf = useCallback(
+  const effectiveProduct = useCallback(
     (batch: Batch) => {
       const product = products.find((p) => p.id === batch.productId);
       if (!product) throw new Error(`Product ${batch.productId} not found`);
-      return computeSummary(product, batch);
+      return effectiveProductFor(product, batch);
     },
     [products],
   );
+
+  const summaryOf = useCallback(
+    (batch: Batch) => computeSummary(effectiveProduct(batch), batch),
+    [effectiveProduct],
+  );
+
+  const getRoute = useCallback(
+    (target: RouteTarget): RouteDraft | undefined => {
+      if (target.kind === "product") {
+        const p = products.find((x) => x.id === target.productId);
+        return p ? routeOfProduct(p) : undefined;
+      }
+      const b = batches.find((x) => x.id === target.batchId);
+      if (!b) return undefined;
+      const p = products.find((x) => x.id === b.productId);
+      if (!p) return undefined;
+      return b.routeOverride ?? routeOfProduct(p);
+    },
+    [products, batches],
+  );
+
+  const mutateRoute = useCallback(
+    (target: RouteTarget, fn: (r: RouteDraft) => RouteDraft) => {
+      if (target.kind === "product") {
+        setProducts((ps) =>
+          ps.map((p) => (p.id !== target.productId ? p : { ...p, ...fn(routeOfProduct(p)) })),
+        );
+        return;
+      }
+      setBatches((bs) =>
+        bs.map((b) => {
+          if (b.id !== target.batchId) return b;
+          const base =
+            b.routeOverride ??
+            cloneRoute(routeOfProduct(products.find((p) => p.id === b.productId)!));
+          return { ...b, routeOverride: fn(base) };
+        }),
+      );
+    },
+    [products],
+  );
+
+  const resetBatchRoute = useCallback((batchId: string) => {
+    setBatches((bs) => bs.map((b) => (b.id !== batchId ? b : { ...b, routeOverride: undefined })));
+  }, []);
+
 
   const setCompleted = useCallback((batchId: string, operationId: string, n: number) => {
     setBatches((bs) =>
