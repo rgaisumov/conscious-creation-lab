@@ -65,6 +65,15 @@ export interface Batch {
   note?: string;
   /** operationId -> completed units */
   completed: Record<string, number>;
+  /**
+   * Batch-local copy of the manufacturing knowledge. Created on the first route/graph
+   * edit inside the batch; other batches of the same product are unaffected.
+   */
+  routeOverride?: {
+    components: ComponentGroup[];
+    operations: Operation[];
+    operationGroups: OperationGroup[];
+  };
 }
 
 export type OperationVisualStatus =
