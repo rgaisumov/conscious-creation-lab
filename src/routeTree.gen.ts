@@ -18,6 +18,7 @@ import { Route as ProductsProductIdRouteImport } from './routes/products.$produc
 import { Route as BatchesBatchIdRouteImport } from './routes/batches.$batchId'
 import { Route as ProductsProductIdIndexRouteImport } from './routes/products.$productId.index'
 import { Route as BatchesBatchIdIndexRouteImport } from './routes/batches.$batchId.index'
+import { Route as ProductsProductIdGraphRouteImport } from './routes/products.$productId.graph'
 import { Route as BatchesBatchIdGraphRouteImport } from './routes/batches.$batchId.graph'
 import { Route as BatchesBatchIdComponentsRouteImport } from './routes/batches.$batchId.components'
 
@@ -66,6 +67,11 @@ const BatchesBatchIdIndexRoute = BatchesBatchIdIndexRouteImport.update({
   path: '/',
   getParentRoute: () => BatchesBatchIdRoute,
 } as any)
+const ProductsProductIdGraphRoute = ProductsProductIdGraphRouteImport.update({
+  id: '/graph',
+  path: '/graph',
+  getParentRoute: () => ProductsProductIdRoute,
+} as any)
 const BatchesBatchIdGraphRoute = BatchesBatchIdGraphRouteImport.update({
   id: '/graph',
   path: '/graph',
@@ -88,6 +94,7 @@ export interface FileRoutesByFullPath {
   '/products/': typeof ProductsIndexRoute
   '/batches/$batchId/components': typeof BatchesBatchIdComponentsRoute
   '/batches/$batchId/graph': typeof BatchesBatchIdGraphRoute
+  '/products/$productId/graph': typeof ProductsProductIdGraphRoute
   '/batches/$batchId/': typeof BatchesBatchIdIndexRoute
   '/products/$productId/': typeof ProductsProductIdIndexRoute
 }
@@ -98,6 +105,7 @@ export interface FileRoutesByTo {
   '/products': typeof ProductsIndexRoute
   '/batches/$batchId/components': typeof BatchesBatchIdComponentsRoute
   '/batches/$batchId/graph': typeof BatchesBatchIdGraphRoute
+  '/products/$productId/graph': typeof ProductsProductIdGraphRoute
   '/batches/$batchId': typeof BatchesBatchIdIndexRoute
   '/products/$productId': typeof ProductsProductIdIndexRoute
 }
@@ -112,6 +120,7 @@ export interface FileRoutesById {
   '/products/': typeof ProductsIndexRoute
   '/batches/$batchId/components': typeof BatchesBatchIdComponentsRoute
   '/batches/$batchId/graph': typeof BatchesBatchIdGraphRoute
+  '/products/$productId/graph': typeof ProductsProductIdGraphRoute
   '/batches/$batchId/': typeof BatchesBatchIdIndexRoute
   '/products/$productId/': typeof ProductsProductIdIndexRoute
 }
@@ -127,6 +136,7 @@ export interface FileRouteTypes {
     | '/products/'
     | '/batches/$batchId/components'
     | '/batches/$batchId/graph'
+    | '/products/$productId/graph'
     | '/batches/$batchId/'
     | '/products/$productId/'
   fileRoutesByTo: FileRoutesByTo
@@ -137,6 +147,7 @@ export interface FileRouteTypes {
     | '/products'
     | '/batches/$batchId/components'
     | '/batches/$batchId/graph'
+    | '/products/$productId/graph'
     | '/batches/$batchId'
     | '/products/$productId'
   id:
@@ -150,6 +161,7 @@ export interface FileRouteTypes {
     | '/products/'
     | '/batches/$batchId/components'
     | '/batches/$batchId/graph'
+    | '/products/$productId/graph'
     | '/batches/$batchId/'
     | '/products/$productId/'
   fileRoutesById: FileRoutesById
@@ -227,6 +239,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BatchesBatchIdIndexRouteImport
       parentRoute: typeof BatchesBatchIdRoute
     }
+    '/products/$productId/graph': {
+      id: '/products/$productId/graph'
+      path: '/graph'
+      fullPath: '/products/$productId/graph'
+      preLoaderRoute: typeof ProductsProductIdGraphRouteImport
+      parentRoute: typeof ProductsProductIdRoute
+    }
     '/batches/$batchId/graph': {
       id: '/batches/$batchId/graph'
       path: '/graph'
@@ -245,10 +264,12 @@ declare module '@tanstack/react-router' {
 }
 
 interface ProductsProductIdRouteChildren {
+  ProductsProductIdGraphRoute: typeof ProductsProductIdGraphRoute
   ProductsProductIdIndexRoute: typeof ProductsProductIdIndexRoute
 }
 
 const ProductsProductIdRouteChildren: ProductsProductIdRouteChildren = {
+  ProductsProductIdGraphRoute: ProductsProductIdGraphRoute,
   ProductsProductIdIndexRoute: ProductsProductIdIndexRoute,
 }
 
