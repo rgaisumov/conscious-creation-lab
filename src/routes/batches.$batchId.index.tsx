@@ -197,7 +197,7 @@ function OperationRow({
         </span>
         <div className="min-w-0">
           <div className={`text-sm font-medium ${highlight ? "text-card-foreground" : "text-card-foreground"}`}>
-            {index}. {name}
+            {name}
           </div>
           <div className="mt-1.5 text-xs text-muted-foreground">{responsible}</div>
           <div className="text-xs text-muted-foreground">время операции: {durationHours} ч</div>
