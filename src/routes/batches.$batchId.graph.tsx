@@ -1,5 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
+import { Pencil, RotateCcw } from "lucide-react";
 import { useWorkspace } from "@/lib/production/workspace";
+import { useProduction } from "@/lib/production/store";
+import { GraphEditor } from "@/components/route/GraphEditor";
 import { componentUnitsAvailable } from "@/lib/production/calculator";
 import { AVAILABILITY_DOT, STATUS_META, fmtQty } from "@/components/batch/status";
 import type { ComponentType } from "@/lib/production/types";
@@ -16,7 +20,9 @@ const TYPE_LABEL: Record<ComponentType, string> = {
 };
 
 function GraphPage() {
-  const { product, summary, selection, select } = useWorkspace();
+  const { product, batch, summary, selection, select } = useWorkspace();
+  const { resetBatchRoute } = useProduction();
+  const [editing, setEditing] = useState(false);
   const sorted = [...product.operations].sort((a, b) => a.order - b.order);
   const computedById = new Map(summary.operations.map((o) => [o.operationId, o]));
   const compById = new Map(product.components.map((c) => [c.id, c]));
@@ -24,14 +30,51 @@ function GraphPage() {
   const producerOpByComponent = new Map<string, string>();
   for (const op of sorted) if (op.outputComponentId) producerOpByComponent.set(op.outputComponentId, op.id);
 
+  const editBar = (
+    <div className="mb-3 flex flex-wrap items-center gap-2">
+      <button
+        type="button"
+        onClick={() => setEditing((v) => !v)}
+        className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs ${
+          editing ? "border-primary text-primary" : "border-border text-muted-foreground hover:text-foreground"
+        }`}
+      >
+        <Pencil className="h-3.5 w-3.5" />
+        {editing ? "Готово" : "Редактировать граф"}
+      </button>
+      {batch.routeOverride && (
+        <>
+          <span className="text-[11px] text-muted-foreground">граф изменён только для этой партии</span>
+          <button
+            type="button"
+            onClick={() => resetBatchRoute(batch.id)}
+            className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground"
+          >
+            <RotateCcw className="h-3 w-3" /> вернуть граф изделия
+          </button>
+        </>
+      )}
+    </div>
+  );
+
+  if (editing) {
+    return (
+      <div className="p-6">
+        {editBar}
+        <GraphEditor target={{ kind: "batch", batchId: batch.id }} />
+      </div>
+    );
+  }
 
   return (
     <div className="p-6">
+      {editBar}
       <p className="mb-4 text-xs text-muted-foreground">
         Граф изделия: слева все закупаемые компоненты операции, справа результат. Полуфабрикаты не показываются
         отдельными карточками — вместо них вертикальная стрелка от операции-изготовителя к операции-потребителю.
         Выделение синхронизировано с тех.маршрутом.
       </p>
+
 
       <div className="space-y-1">
         {sorted.map((op, i) => {
