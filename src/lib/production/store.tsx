@@ -9,7 +9,20 @@ import {
 } from "react";
 import { initialBatches, initialProducts } from "./data";
 import { computeSummary } from "./calculator";
+import { cloneRoute, type RouteDraft } from "./route-ops";
 import type { Batch, Position, Product, Summary } from "./types";
+
+export type RouteTarget = { kind: "product"; productId: string } | { kind: "batch"; batchId: string };
+
+export function routeOfProduct(p: Product): RouteDraft {
+  return { components: p.components, operations: p.operations, operationGroups: p.operationGroups };
+}
+
+/** Product template with the batch-local route override applied (if any). */
+export function effectiveProductFor(product: Product, batch: Batch): Product {
+  if (!batch.routeOverride) return product;
+  return { ...product, ...batch.routeOverride };
+}
 
 export type Theme = "light" | "dark";
 
