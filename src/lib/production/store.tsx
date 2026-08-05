@@ -283,17 +283,136 @@ export function ProductionProvider({ children }: { children: ReactNode }) {
 
 
 
-  const importState = useCallback((s: { products: Product[]; batches: Batch[] }) => {
-    if (Array.isArray(s.products)) setProducts(s.products);
-    if (Array.isArray(s.batches)) setBatches(s.batches);
+  const addContract = useCallback((productId: string) => {
+    const id = `c-${Math.random().toString(36).slice(2, 8)}`;
+    const today = new Date().toISOString().slice(0, 10);
+    const due = new Date();
+    due.setMonth(due.getMonth() + 3);
+    setContracts((cs) => [
+      ...cs,
+      {
+        id,
+        number: `№${cs.length + 1}/${new Date().getFullYear()}`,
+        counterparty: "Новый контрагент",
+        productId,
+        decimalNumber: "",
+        signedDate: today,
+        deliveries: [
+          { id: `${id}-d1`, date: due.toISOString().slice(0, 10), quantity: 50, batchIds: [] },
+        ],
+      },
+    ]);
+    return id;
   }, []);
 
-  const exportState = useCallback(() => ({ products, batches }), [products, batches]);
+  const updateContract = useCallback(
+    (contractId: string, patch: Partial<Omit<Contract, "id" | "deliveries">>) => {
+      setContracts((cs) => cs.map((c) => (c.id === contractId ? { ...c, ...patch } : c)));
+    },
+    [],
+  );
+
+  const removeContract = useCallback((contractId: string) => {
+    setContracts((cs) => cs.filter((c) => c.id !== contractId));
+  }, []);
+
+  const addDelivery = useCallback((contractId: string) => {
+    setContracts((cs) =>
+      cs.map((c) => {
+        if (c.id !== contractId) return c;
+        const due = new Date();
+        due.setMonth(due.getMonth() + 3);
+        return {
+          ...c,
+          deliveries: [
+            ...c.deliveries,
+            {
+              id: `${contractId}-d-${Math.random().toString(36).slice(2, 6)}`,
+              date: due.toISOString().slice(0, 10),
+              quantity: 10,
+              batchIds: [],
+            },
+          ],
+        };
+      }),
+    );
+  }, []);
+
+  const updateDelivery = useCallback(
+    (contractId: string, deliveryId: string, patch: Partial<Omit<ContractDelivery, "id">>) => {
+      setContracts((cs) =>
+        cs.map((c) =>
+          c.id !== contractId
+            ? c
+            : {
+                ...c,
+                deliveries: c.deliveries.map((d) => (d.id === deliveryId ? { ...d, ...patch } : d)),
+              },
+        ),
+      );
+    },
+    [],
+  );
+
+  const removeDelivery = useCallback((contractId: string, deliveryId: string) => {
+    setContracts((cs) =>
+      cs.map((c) =>
+        c.id !== contractId ? c : { ...c, deliveries: c.deliveries.filter((d) => d.id !== deliveryId) },
+      ),
+    );
+  }, []);
+
+  const attachBatch = useCallback((contractId: string, deliveryId: string, batchId: string) => {
+    setContracts((cs) =>
+      cs.map((c) =>
+        c.id !== contractId
+          ? c
+          : {
+              ...c,
+              deliveries: c.deliveries.map((d) =>
+                d.id !== deliveryId || d.batchIds.includes(batchId)
+                  ? d
+                  : { ...d, batchIds: [...d.batchIds, batchId] },
+              ),
+            },
+      ),
+    );
+  }, []);
+
+  const detachBatch = useCallback((contractId: string, deliveryId: string, batchId: string) => {
+    setContracts((cs) =>
+      cs.map((c) =>
+        c.id !== contractId
+          ? c
+          : {
+              ...c,
+              deliveries: c.deliveries.map((d) =>
+                d.id !== deliveryId ? d : { ...d, batchIds: d.batchIds.filter((b) => b !== batchId) },
+              ),
+            },
+      ),
+    );
+  }, []);
+
+  const importState = useCallback(
+    (s: { products: Product[]; batches: Batch[]; contracts?: Contract[] }) => {
+      if (Array.isArray(s.products)) setProducts(s.products);
+      if (Array.isArray(s.batches)) setBatches(s.batches);
+      if (Array.isArray(s.contracts)) setContracts(s.contracts);
+    },
+    [],
+  );
+
+  const exportState = useCallback(
+    () => ({ products, batches, contracts }),
+    [products, batches, contracts],
+  );
 
   const value = useMemo<Ctx>(
     () => ({
       products,
       batches,
+      contracts,
       theme,
       setTheme,
       toggleTheme,
@@ -311,12 +430,21 @@ export function ProductionProvider({ children }: { children: ReactNode }) {
       updateFixtureCount,
       addBatch,
       addProduct,
+      addContract,
+      updateContract,
+      removeContract,
+      addDelivery,
+      updateDelivery,
+      removeDelivery,
+      attachBatch,
+      detachBatch,
       importState,
       exportState,
     }),
     [
       products,
       batches,
+      contracts,
       theme,
       setTheme,
       toggleTheme,
@@ -334,6 +462,14 @@ export function ProductionProvider({ children }: { children: ReactNode }) {
       updateFixtureCount,
       addBatch,
       addProduct,
+      addContract,
+      updateContract,
+      removeContract,
+      addDelivery,
+      updateDelivery,
+      removeDelivery,
+      attachBatch,
+      detachBatch,
       importState,
       exportState,
     ],
