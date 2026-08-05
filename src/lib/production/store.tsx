@@ -67,6 +67,7 @@ const ProductionContext = createContext<Ctx | null>(null);
 export function ProductionProvider({ children }: { children: ReactNode }) {
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [batches, setBatches] = useState<Batch[]>(initialBatches);
+  const [contracts, setContracts] = useState<Contract[]>(initialContracts);
   const [theme, setThemeState] = useState<Theme>("dark");
 
   useEffect(() => {
