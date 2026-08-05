@@ -316,3 +316,27 @@ export const initialBatches: Batch[] = [
     },
   },
 ];
+
+export const initialContracts: Contract[] = [
+  {
+    id: "c-118",
+    number: "№118/2026",
+    counterparty: 'АО "Заказчик-1"',
+    productId: "izdelie-1",
+    decimalNumber: "АБВГ.464349.001",
+    signedDate: "2026-02-10",
+    deliveries: [
+      { id: "c-118-d1", date: "2026-07-31", quantity: 100, batchIds: ["b-1-24"] },
+      { id: "c-118-d2", date: "2026-10-31", quantity: 50, batchIds: ["b-1-25"] },
+    ],
+  },
+  {
+    id: "c-204",
+    number: "№204/2026",
+    counterparty: 'ООО "Заказчик-2"',
+    productId: "izdelie-2",
+    decimalNumber: "АБВГ.464349.002",
+    signedDate: "2026-04-02",
+    deliveries: [{ id: "c-204-d1", date: "2026-11-30", quantity: 40, batchIds: [] }],
+  },
+];

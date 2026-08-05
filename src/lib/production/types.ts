@@ -143,3 +143,25 @@ export interface Summary {
   progressPct: number;
   primaryBlockingReason: string;
 }
+
+/** Позиция поставки внутри договора: срок и количество изделий. */
+export interface ContractDelivery {
+  id: string;
+  date: string; // ISO date
+  quantity: number;
+  /** Привязанные производственные партии. */
+  batchIds: string[];
+}
+
+/** Договор с контрагентом (CM001). */
+export interface Contract {
+  id: string;
+  number: string;
+  counterparty: string;
+  productId: string;
+  /** Децимальный номер изделия по договору. */
+  decimalNumber: string;
+  signedDate: string; // ISO date
+  note?: string;
+  deliveries: ContractDelivery[];
+}
