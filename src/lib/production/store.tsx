@@ -7,10 +7,10 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { initialBatches, initialProducts } from "./data";
+import { initialBatches, initialContracts, initialProducts } from "./data";
 import { computeSummary } from "./calculator";
 import { cloneRoute, type RouteDraft } from "./route-ops";
-import type { Batch, Position, Product, Summary } from "./types";
+import type { Batch, Contract, ContractDelivery, Position, Product, Summary } from "./types";
 
 export type RouteTarget = { kind: "product"; productId: string } | { kind: "batch"; batchId: string };
 
