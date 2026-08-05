@@ -1,4 +1,4 @@
-import type { Batch, Product } from "./types";
+import type { Batch, Contract, Product } from "./types";
 
 export const initialProducts: Product[] = [
   {
