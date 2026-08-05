@@ -1,10 +1,11 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Factory, Boxes, Settings, Moon, Sun } from "lucide-react";
+import { Factory, Boxes, FileText, Settings, Moon, Sun } from "lucide-react";
 import { useProduction } from "@/lib/production/store";
 
 const items = [
   { title: "Производство", url: "/", icon: Factory },
   { title: "Изделия", url: "/products", icon: Boxes },
+  { title: "Договоры", url: "/contracts", icon: FileText },
   { title: "Настройки", url: "/settings", icon: Settings },
 ];
 
