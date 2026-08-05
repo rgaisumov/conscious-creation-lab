@@ -1,7 +1,8 @@
+import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Plus, Trash2, X } from "lucide-react";
+import { Pencil, Plus, Trash2, X, Eye } from "lucide-react";
 import { useProduction } from "@/lib/production/store";
-import type { Batch, ContractDelivery } from "@/lib/production/types";
+import type { Batch, Contract, ContractDelivery } from "@/lib/production/types";
 
 export const Route = createFileRoute("/contracts")({
   head: () => ({
@@ -34,6 +35,12 @@ function isOverdue(b: Batch, d: ContractDelivery) {
   return !batchDone(b) && d.date < today();
 }
 
+function fmtDate(iso: string) {
+  if (!iso) return "—";
+  const [y, m, d] = iso.split("-");
+  return `${d}.${m}.${y}`;
+}
+
 const inputCls =
   "rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring";
 
@@ -52,6 +59,17 @@ function ContractsPage() {
     detachBatch,
   } = useProduction();
 
+  const [editing, setEditing] = useState(false);
+
+  const deliveryState = (c: Contract, d: ContractDelivery) => {
+    const linked = d.batchIds
+      .map((id) => batches.find((x) => x.id === id))
+      .filter(Boolean) as Batch[];
+    const late = linked.some((b) => isOverdue(b, d));
+    const shipped = linked.reduce((s, b) => s + b.shippedQty, 0);
+    return { linked, late, shipped };
+  };
+
   return (
     <div className="flex-1 min-h-0 overflow-auto">
       <header className="flex flex-wrap items-start justify-between gap-3 border-b border-border px-6 py-4">
@@ -61,23 +79,131 @@ function ContractsPage() {
             Обязательства перед заказчиком: сроки, количества и привязанные партии.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => addContract(products[0]?.id ?? "")}
-          disabled={products.length === 0}
-          className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-        >
-          <Plus className="h-3.5 w-3.5" />
-          Новый договор
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setEditing((v) => !v)}
+            className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
+          >
+            {editing ? <Eye className="h-3.5 w-3.5" /> : <Pencil className="h-3.5 w-3.5" />}
+            {editing ? "Режим просмотра" : "Редактировать"}
+          </button>
+          {editing && (
+            <button
+              type="button"
+              onClick={() => addContract(products[0]?.id ?? "")}
+              disabled={products.length === 0}
+              className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Новый договор
+            </button>
+          )}
+        </div>
       </header>
 
-      <div className="space-y-4 p-6">
-        {contracts.length === 0 && (
-          <p className="text-sm text-muted-foreground">Договоров пока нет.</p>
-        )}
+      {contracts.length === 0 && (
+        <p className="p-6 text-sm text-muted-foreground">Договоров пока нет.</p>
+      )}
 
-        {contracts.map((c) => {
+      {!editing && contracts.length > 0 && (
+        <div className="p-6">
+          <div className="overflow-x-auto rounded-lg border border-border bg-card">
+            <table className="w-full min-w-[900px] text-left text-xs">
+              <thead className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                <tr className="border-b border-border">
+                  <th className="px-3 py-2 font-medium">Договор</th>
+                  <th className="px-3 py-2 font-medium">Контрагент</th>
+                  <th className="px-3 py-2 font-medium">Изделие</th>
+                  <th className="px-3 py-2 font-medium">Децимальный №</th>
+                  <th className="px-3 py-2 font-medium">Заключен</th>
+                  <th className="px-3 py-2 font-medium">Сроки поставки</th>
+                  <th className="px-3 py-2 text-right font-medium">Всего</th>
+                </tr>
+              </thead>
+              <tbody>
+                {contracts.map((c) => {
+                  const product = products.find((p) => p.id === c.productId);
+                  const total = c.deliveries.reduce((s, d) => s + d.quantity, 0);
+                  const hasLate = c.deliveries.some((d) => deliveryState(c, d).late);
+                  return (
+                    <tr
+                      key={c.id}
+                      className={`border-b border-border/60 align-top ${
+                        hasLate ? "bg-destructive/5" : ""
+                      }`}
+                    >
+                      <td className="px-3 py-2 font-medium">{c.number || "—"}</td>
+                      <td className="px-3 py-2">{c.counterparty || "—"}</td>
+                      <td className="px-3 py-2">{product?.name ?? "—"}</td>
+                      <td className="px-3 py-2 text-muted-foreground">{c.decimalNumber || "—"}</td>
+                      <td className="px-3 py-2 text-muted-foreground">{fmtDate(c.signedDate)}</td>
+                      <td className="px-3 py-2">
+                        <div className="flex flex-col gap-1">
+                          {c.deliveries.length === 0 && (
+                            <span className="text-muted-foreground">сроки не заданы</span>
+                          )}
+                          {c.deliveries.map((d) => {
+                            const { linked, late } = deliveryState(c, d);
+                            return (
+                              <div key={d.id} className="flex flex-wrap items-center gap-1.5">
+                                <span
+                                  className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 ${
+                                    late
+                                      ? "bg-destructive/15 text-destructive"
+                                      : "bg-muted text-foreground"
+                                  }`}
+                                >
+                                  {d.quantity} шт до {fmtDate(d.date)}
+                                </span>
+                                {linked.length === 0 ? (
+                                  <span className="text-muted-foreground">— партии не привязаны</span>
+                                ) : (
+                                  linked.map((b) => {
+                                    const bLate = isOverdue(b, d);
+                                    return (
+                                      <Link
+                                        key={b.id}
+                                        to="/batches/$batchId"
+                                        params={{ batchId: b.id }}
+                                        className={`rounded border px-1.5 py-0.5 hover:underline ${
+                                          bLate
+                                            ? "border-destructive text-destructive"
+                                            : batchDone(b)
+                                              ? "border-border text-muted-foreground"
+                                              : "border-border text-foreground"
+                                        }`}
+                                        title={
+                                          bLate
+                                            ? "Просрочка по договору"
+                                            : batchDone(b)
+                                              ? "Закрыта"
+                                              : "В работе"
+                                        }
+                                      >
+                                        {b.number} · {b.shippedQty}/{b.orderedQty}
+                                      </Link>
+                                    );
+                                  })
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </td>
+                      <td className="px-3 py-2 text-right font-medium">{total} шт</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {editing && (
+        <div className="space-y-4 p-6">
+          {contracts.map((c) => {
           const product = products.find((p) => p.id === c.productId);
           const productBatches = batches.filter((b) => b.productId === c.productId);
           const hasLate = c.deliveries.some((d) =>
@@ -299,7 +425,8 @@ function ContractsPage() {
             </section>
           );
         })}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
