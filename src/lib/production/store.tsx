@@ -29,6 +29,7 @@ export type Theme = "light" | "dark";
 type Ctx = {
   products: Product[];
   batches: Batch[];
+  contracts: Contract[];
   theme: Theme;
   setTheme: (t: Theme) => void;
   toggleTheme: () => void;
@@ -48,8 +49,17 @@ type Ctx = {
   addBatch: (productId: string) => string;
   addProduct: (name?: string) => string;
 
-  importState: (s: { products: Product[]; batches: Batch[] }) => void;
-  exportState: () => { products: Product[]; batches: Batch[] };
+  addContract: (productId: string) => string;
+  updateContract: (contractId: string, patch: Partial<Omit<Contract, "id" | "deliveries">>) => void;
+  removeContract: (contractId: string) => void;
+  addDelivery: (contractId: string) => void;
+  updateDelivery: (contractId: string, deliveryId: string, patch: Partial<Omit<ContractDelivery, "id">>) => void;
+  removeDelivery: (contractId: string, deliveryId: string) => void;
+  attachBatch: (contractId: string, deliveryId: string, batchId: string) => void;
+  detachBatch: (contractId: string, deliveryId: string, batchId: string) => void;
+
+  importState: (s: { products: Product[]; batches: Batch[]; contracts?: Contract[] }) => void;
+  exportState: () => { products: Product[]; batches: Batch[]; contracts: Contract[] };
 };
 
 const ProductionContext = createContext<Ctx | null>(null);
