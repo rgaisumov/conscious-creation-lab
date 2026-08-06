@@ -7,10 +7,25 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { initialBatches, initialContracts, initialProducts } from "./data";
+import {
+  initialBatches,
+  initialContracts,
+  initialProducts,
+  initialTransfers,
+  initialWorkcenters,
+} from "./data";
 import { computeSummary } from "./calculator";
 import { cloneRoute, type RouteDraft } from "./route-ops";
-import type { Batch, Contract, ContractDelivery, Position, Product, Summary } from "./types";
+import type {
+  Batch,
+  Contract,
+  ContractDelivery,
+  Position,
+  Product,
+  Summary,
+  TransferTime,
+  Workcenter,
+} from "./types";
 
 export type RouteTarget = { kind: "product"; productId: string } | { kind: "batch"; batchId: string };
 
@@ -30,6 +45,8 @@ type Ctx = {
   products: Product[];
   batches: Batch[];
   contracts: Contract[];
+  workcenters: Workcenter[];
+  transfers: TransferTime[];
   theme: Theme;
   setTheme: (t: Theme) => void;
   toggleTheme: () => void;
@@ -58,6 +75,11 @@ type Ctx = {
   attachBatch: (contractId: string, deliveryId: string, batchId: string) => void;
   detachBatch: (contractId: string, deliveryId: string, batchId: string) => void;
 
+  addWorkcenter: () => string;
+  updateWorkcenter: (id: string, patch: Partial<Omit<Workcenter, "id">>) => void;
+  removeWorkcenter: (id: string) => void;
+  setTransfer: (fromNode: string, toNode: string, hours: number) => void;
+
   importState: (s: { products: Product[]; batches: Batch[]; contracts?: Contract[] }) => void;
   exportState: () => { products: Product[]; batches: Batch[]; contracts: Contract[] };
 };
@@ -68,6 +90,8 @@ export function ProductionProvider({ children }: { children: ReactNode }) {
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [batches, setBatches] = useState<Batch[]>(initialBatches);
   const [contracts, setContracts] = useState<Contract[]>(initialContracts);
+  const [workcenters, setWorkcenters] = useState<Workcenter[]>(initialWorkcenters);
+  const [transfers, setTransfers] = useState<TransferTime[]>(initialTransfers);
   const [theme, setThemeState] = useState<Theme>("dark");
 
   useEffect(() => {
@@ -395,6 +419,40 @@ export function ProductionProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
+  const addWorkcenter = useCallback(() => {
+    const id = `wc-${Math.random().toString(36).slice(2, 8)}`;
+    setWorkcenters((ws) => [
+      ...ws,
+      { id, name: `Новый участок ${ws.length + 1}`, workers: 1, hoursPerWorkerPerWeek: 40 },
+    ]);
+    return id;
+  }, []);
+
+  const updateWorkcenter = useCallback((id: string, patch: Partial<Omit<Workcenter, "id">>) => {
+    setWorkcenters((ws) => ws.map((w) => (w.id === id ? { ...w, ...patch } : w)));
+  }, []);
+
+  const removeWorkcenter = useCallback((id: string) => {
+    setWorkcenters((ws) => ws.filter((w) => w.id !== id));
+    setProducts((ps) =>
+      ps.map((p) => ({
+        ...p,
+        operations: p.operations.map((o) => (o.workcenterId === id ? { ...o, workcenterId: null } : o)),
+      })),
+    );
+  }, []);
+
+  const setTransfer = useCallback((fromNode: string, toNode: string, hours: number) => {
+    const h = Math.max(0, hours);
+    setTransfers((ts) => {
+      const i = ts.findIndex((t) => t.fromNode === fromNode && t.toNode === toNode);
+      if (i < 0) return [...ts, { fromNode, toNode, hours: h }];
+      const copy = [...ts];
+      copy[i] = { fromNode, toNode, hours: h };
+      return copy;
+    });
+  }, []);
+
   const importState = useCallback(
     (s: { products: Product[]; batches: Batch[]; contracts?: Contract[] }) => {
       if (Array.isArray(s.products)) setProducts(s.products);
@@ -414,6 +472,8 @@ export function ProductionProvider({ children }: { children: ReactNode }) {
       products,
       batches,
       contracts,
+      workcenters,
+      transfers,
       theme,
       setTheme,
       toggleTheme,
@@ -439,6 +499,10 @@ export function ProductionProvider({ children }: { children: ReactNode }) {
       removeDelivery,
       attachBatch,
       detachBatch,
+      addWorkcenter,
+      updateWorkcenter,
+      removeWorkcenter,
+      setTransfer,
       importState,
       exportState,
     }),
@@ -446,6 +510,8 @@ export function ProductionProvider({ children }: { children: ReactNode }) {
       products,
       batches,
       contracts,
+      workcenters,
+      transfers,
       theme,
       setTheme,
       toggleTheme,
@@ -471,6 +537,10 @@ export function ProductionProvider({ children }: { children: ReactNode }) {
       removeDelivery,
       attachBatch,
       detachBatch,
+      addWorkcenter,
+      updateWorkcenter,
+      removeWorkcenter,
+      setTransfer,
       importState,
       exportState,
     ],
