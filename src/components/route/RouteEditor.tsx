@@ -1,7 +1,8 @@
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import { useProduction, type RouteTarget } from "@/lib/production/store";
 import * as R from "@/lib/production/route-ops";
-import type { ComponentType } from "@/lib/production/types";
+import { nodeOf, transferHours } from "@/lib/production/workload";
+import type { ComponentType, Operation } from "@/lib/production/types";
 
 export const TYPE_LABEL: Record<ComponentType, string> = {
   material: "Материал",
@@ -12,13 +13,17 @@ export const TYPE_LABEL: Record<ComponentType, string> = {
 
 /** Shared editor of the technological route (operations + their inputs/outputs). */
 export function RouteEditor({ target }: { target: RouteTarget }) {
-  const { getRoute, mutateRoute } = useProduction();
+  const { getRoute, mutateRoute, workcenters, transfers } = useProduction();
   const route = getRoute(target);
   if (!route) return null;
+
+  const transitionHours = (from: Operation, to: Operation) =>
+    transferHours(transfers, nodeOf(from), nodeOf(to));
 
   const ops = R.sortedOps(route);
   const compById = new Map(route.components.map((c) => [c.id, c]));
   const purchasable = route.components.filter((c) => c.type !== "semi-product");
+
 
   const InsertRow = ({ index }: { index: number }) => (
     <div className="flex justify-center py-1">
@@ -104,9 +109,78 @@ export function RouteEditor({ target }: { target: RouteTarget }) {
                 </button>
               </div>
 
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <label className="flex items-center gap-1 text-xs text-muted-foreground">
+                  Участок
+                  <select
+                    value={op.workcenterId ?? ""}
+                    onChange={(e) =>
+                      mutateRoute(target, (r) =>
+                        R.updateOperation(r, op.id, { workcenterId: e.target.value || null }),
+                      )
+                    }
+                    className="rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground"
+                  >
+                    <option value="">— не задан —</option>
+                    {workcenters.map((w) => (
+                      <option key={w.id} value={w.id}>
+                        {w.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <input
+                    type="checkbox"
+                    checked={!!op.outsourceOrg}
+                    onChange={(e) =>
+                      mutateRoute(target, (r) =>
+                        R.updateOperation(r, op.id, {
+                          outsourceOrg: e.target.checked ? "Подрядчик" : undefined,
+                          outsourceDays: e.target.checked ? (op.outsourceDays ?? 5) : undefined,
+                        }),
+                      )
+                    }
+                  />
+                  аутсорс
+                </label>
+                {op.outsourceOrg !== undefined && (
+                  <>
+                    <input
+                      value={op.outsourceOrg}
+                      onChange={(e) =>
+                        mutateRoute(target, (r) => R.updateOperation(r, op.id, { outsourceOrg: e.target.value }))
+                      }
+                      placeholder="Организация"
+                      className="w-44 rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground"
+                    />
+                    <label className="flex items-center gap-1 text-xs text-muted-foreground">
+                      оборот, дн
+                      <input
+                        type="number"
+                        min={0}
+                        value={op.outsourceDays ?? 0}
+                        onChange={(e) =>
+                          mutateRoute(target, (r) =>
+                            R.updateOperation(r, op.id, { outsourceDays: Number(e.target.value) }),
+                          )
+                        }
+                        className="w-16 rounded-md border border-border bg-background px-2 py-1 text-xs tabular-nums text-foreground"
+                      />
+                    </label>
+                  </>
+                )}
+                {prev && transitionHours(prev, op) > 0 && (
+                  <span className="rounded border border-border px-2 py-0.5 text-[11px] text-muted-foreground">
+                    транспортировка с предыдущего узла: {transitionHours(prev, op)} ч
+                  </span>
+                )}
+              </div>
+
               <div className="mt-3 text-[10px] uppercase tracking-wider text-muted-foreground">
                 Закупаемые компоненты операции
               </div>
+
               <div className="mt-1.5 flex flex-wrap gap-1.5">
                 {purchasable.map((c) => {
                   const on = op.inputComponentIds.includes(c.id);

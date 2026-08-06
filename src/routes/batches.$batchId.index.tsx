@@ -13,7 +13,11 @@ export const Route = createFileRoute("/batches/$batchId/")({
 
 function TechRoutePage() {
   const { product, batch, summary, selection, select } = useWorkspace();
-  const { resetBatchRoute } = useProduction();
+  const { resetBatchRoute, workcenters } = useProduction();
+  const placeOf = (op: { workcenterId?: string | null; outsourceOrg?: string; outsourceDays?: number }) =>
+    op.outsourceOrg?.trim()
+      ? `Аутсорс · ${op.outsourceOrg}${op.outsourceDays ? ` · ${op.outsourceDays} дн` : ""}`
+      : (workcenters.find((w) => w.id === op.workcenterId)?.name ?? "");
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const [editing, setEditing] = useState(false);
 
@@ -93,6 +97,8 @@ function TechRoutePage() {
                     index={idx + 1}
                     name={op.name}
                     responsible={op.responsible}
+                    place={placeOf(op)}
+                    outsourced={!!op.outsourceOrg?.trim()}
                     durationHours={op.durationHours}
                     oc={oc}
                     batchSize={summary.batchSize}
@@ -145,6 +151,8 @@ function TechRoutePage() {
                             index={`${idx + 1}.${i + 1}`}
                             name={op.name}
                             responsible={op.responsible}
+                            place={placeOf(op)}
+                            outsourced={!!op.outsourceOrg?.trim()}
                             durationHours={op.durationHours}
                             oc={oc}
                             batchSize={summary.batchSize}
@@ -189,6 +197,8 @@ function OperationRow({
   index,
   name,
   responsible,
+  place,
+  outsourced,
   durationHours,
   oc,
   batchSize,
@@ -199,6 +209,8 @@ function OperationRow({
   index: number | string;
   name: string;
   responsible: string;
+  place?: string;
+  outsourced?: boolean;
   durationHours: number;
   oc: OperationComputed;
   batchSize: number;
@@ -244,6 +256,17 @@ function OperationRow({
             {name}
           </div>
           <div className="mt-1.5 text-xs text-muted-foreground">{responsible}</div>
+          {place && (
+            <div
+              className={`mt-1 inline-block rounded border px-1.5 py-0.5 text-[11px] ${
+                outsourced
+                  ? "border-status-wait/40 bg-status-wait/10 text-status-wait"
+                  : "border-border text-muted-foreground"
+              }`}
+            >
+              {place}
+            </div>
+          )}
           <div className="text-xs text-muted-foreground">время операции: {durationHours} ч</div>
         </div>
       </div>

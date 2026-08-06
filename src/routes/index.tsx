@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { AlertTriangle, ArrowRight, CalendarClock, Plus } from "lucide-react";
+import { AlertTriangle, ArrowRight, CalendarClock, Plus, Search } from "lucide-react";
 import { useProduction } from "@/lib/production/store";
 import type { Batch, BatchHealth, Summary } from "@/lib/production/types";
 
@@ -92,15 +92,36 @@ function ProductionDashboard() {
   const navigate = useNavigate();
   const [productId, setProductId] = useState(products[0]?.id ?? "");
 
-  const rows = batches
+  const [query, setQuery] = useState("");
+  const [health, setHealth] = useState<"all" | BatchHealth>("all");
+  const [filterProductId, setFilterProductId] = useState("all");
+  const [onlyBlocked, setOnlyBlocked] = useState(false);
+
+  const allRows = batches
     .map((b) => ({ batch: b, summary: summaryOf(b), product: getProduct(b.productId) }))
     .sort((a, b) => {
       const rank = { late: 0, risk: 1, ok: 2 } as const;
       return rank[a.summary.health] - rank[b.summary.health];
     });
 
+  const q = query.trim().toLowerCase();
+  const rows = allRows.filter((r) => {
+    if (health !== "all" && r.summary.health !== health) return false;
+    if (filterProductId !== "all" && r.batch.productId !== filterProductId) return false;
+    if (onlyBlocked && r.summary.blockers.length === 0) return false;
+    if (!q) return true;
+    return (
+      r.batch.number.toLowerCase().includes(q) ||
+      (r.product?.name ?? "").toLowerCase().includes(q) ||
+      r.summary.primaryBlockingReason.toLowerCase().includes(q)
+    );
+  });
+
   const blocked = rows.filter((r) => r.summary.blockers.length > 0).length;
   const late = rows.filter((r) => r.summary.health === "late").length;
+
+  const selectCls =
+    "rounded-md border border-border bg-background px-2 py-1.5 text-xs text-foreground";
 
   return (
     <div className="flex-1 min-h-0 overflow-auto">
@@ -115,7 +136,7 @@ function ProductionDashboard() {
           <select
             value={productId}
             onChange={(e) => setProductId(e.target.value)}
-            className="rounded-md border border-border bg-background px-2 py-1.5 text-xs text-foreground"
+            className={selectCls}
             aria-label="Изделие для новой партии"
           >
             {products.map((p) => (
@@ -139,8 +160,51 @@ function ProductionDashboard() {
         </div>
       </header>
 
-      <div className="grid gap-4 p-6 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="flex flex-wrap items-center gap-2 border-b border-border px-6 py-3">
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Поиск: партия, изделие, блокер…"
+            className={`${selectCls} w-64 pl-7`}
+          />
+        </div>
+        <select
+          value={filterProductId}
+          onChange={(e) => setFilterProductId(e.target.value)}
+          className={selectCls}
+          aria-label="Фильтр по изделию"
+        >
+          <option value="all">Все изделия</option>
+          {products.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+        <select
+          value={health}
+          onChange={(e) => setHealth(e.target.value as "all" | BatchHealth)}
+          className={selectCls}
+          aria-label="Фильтр по статусу"
+        >
+          <option value="all">Любой статус</option>
+          <option value="late">Отставание</option>
+          <option value="risk">Риск</option>
+          <option value="ok">В графике</option>
+        </select>
+        <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <input
+            type="checkbox"
+            checked={onlyBlocked}
+            onChange={(e) => setOnlyBlocked(e.target.checked)}
+          />
+          только с блокерами
+        </label>
+      </div>
 
+      <div className="grid gap-4 p-6 sm:grid-cols-2 xl:grid-cols-3">
         {rows.map((r) => (
           <BatchCard
             key={r.batch.id}
@@ -149,7 +213,13 @@ function ProductionDashboard() {
             productName={r.product?.name ?? "—"}
           />
         ))}
+        {rows.length === 0 && (
+          <div className="col-span-full rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+            Партии не найдены — измените поиск или фильтры.
+          </div>
+        )}
       </div>
+
     </div>
   );
 }

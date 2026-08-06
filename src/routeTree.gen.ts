@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WorkcentersRouteImport } from './routes/workcenters'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ProductsRouteImport } from './routes/products'
 import { Route as ContractsRouteImport } from './routes/contracts'
@@ -23,6 +24,11 @@ import { Route as ProductsProductIdGraphRouteImport } from './routes/products.$p
 import { Route as BatchesBatchIdGraphRouteImport } from './routes/batches.$batchId.graph'
 import { Route as BatchesBatchIdComponentsRouteImport } from './routes/batches.$batchId.components'
 
+const WorkcentersRoute = WorkcentersRouteImport.update({
+  id: '/workcenters',
+  path: '/workcenters',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -95,6 +101,7 @@ export interface FileRoutesByFullPath {
   '/contracts': typeof ContractsRoute
   '/products': typeof ProductsRouteWithChildren
   '/settings': typeof SettingsRoute
+  '/workcenters': typeof WorkcentersRoute
   '/batches/$batchId': typeof BatchesBatchIdRouteWithChildren
   '/products/$productId': typeof ProductsProductIdRouteWithChildren
   '/sitemap/xml': typeof SitemapXmlRoute
@@ -109,6 +116,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/contracts': typeof ContractsRoute
   '/settings': typeof SettingsRoute
+  '/workcenters': typeof WorkcentersRoute
   '/sitemap/xml': typeof SitemapXmlRoute
   '/products': typeof ProductsIndexRoute
   '/batches/$batchId/components': typeof BatchesBatchIdComponentsRoute
@@ -123,6 +131,7 @@ export interface FileRoutesById {
   '/contracts': typeof ContractsRoute
   '/products': typeof ProductsRouteWithChildren
   '/settings': typeof SettingsRoute
+  '/workcenters': typeof WorkcentersRoute
   '/batches/$batchId': typeof BatchesBatchIdRouteWithChildren
   '/products/$productId': typeof ProductsProductIdRouteWithChildren
   '/sitemap/xml': typeof SitemapXmlRoute
@@ -140,6 +149,7 @@ export interface FileRouteTypes {
     | '/contracts'
     | '/products'
     | '/settings'
+    | '/workcenters'
     | '/batches/$batchId'
     | '/products/$productId'
     | '/sitemap/xml'
@@ -154,6 +164,7 @@ export interface FileRouteTypes {
     | '/'
     | '/contracts'
     | '/settings'
+    | '/workcenters'
     | '/sitemap/xml'
     | '/products'
     | '/batches/$batchId/components'
@@ -167,6 +178,7 @@ export interface FileRouteTypes {
     | '/contracts'
     | '/products'
     | '/settings'
+    | '/workcenters'
     | '/batches/$batchId'
     | '/products/$productId'
     | '/sitemap/xml'
@@ -183,12 +195,20 @@ export interface RootRouteChildren {
   ContractsRoute: typeof ContractsRoute
   ProductsRoute: typeof ProductsRouteWithChildren
   SettingsRoute: typeof SettingsRoute
+  WorkcentersRoute: typeof WorkcentersRoute
   BatchesBatchIdRoute: typeof BatchesBatchIdRouteWithChildren
   SitemapXmlRoute: typeof SitemapXmlRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/workcenters': {
+      id: '/workcenters'
+      path: '/workcenters'
+      fullPath: '/workcenters'
+      preLoaderRoute: typeof WorkcentersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings': {
       id: '/settings'
       path: '/settings'
@@ -331,6 +351,7 @@ const rootRouteChildren: RootRouteChildren = {
   ContractsRoute: ContractsRoute,
   ProductsRoute: ProductsRouteWithChildren,
   SettingsRoute: SettingsRoute,
+  WorkcentersRoute: WorkcentersRoute,
   BatchesBatchIdRoute: BatchesBatchIdRouteWithChildren,
   SitemapXmlRoute: SitemapXmlRoute,
 }
