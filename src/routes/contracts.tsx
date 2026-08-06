@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Pencil, Plus, Trash2, X, Eye } from "lucide-react";
+import { Pencil, Plus, Trash2, X, Eye, Search } from "lucide-react";
 import { useProduction } from "@/lib/production/store";
 import type { Batch, Contract, ContractDelivery } from "@/lib/production/types";
 
@@ -60,6 +60,9 @@ function ContractsPage() {
   } = useProduction();
 
   const [editing, setEditing] = useState(false);
+  const [query, setQuery] = useState("");
+  const [filterProductId, setFilterProductId] = useState("all");
+  const [onlyLate, setOnlyLate] = useState(false);
 
   const deliveryState = (c: Contract, d: ContractDelivery) => {
     const linked = d.batchIds
@@ -69,6 +72,20 @@ function ContractsPage() {
     const shipped = linked.reduce((s, b) => s + b.shippedQty, 0);
     return { linked, late, shipped };
   };
+
+  const q = query.trim().toLowerCase();
+  const visibleContracts = contracts.filter((c) => {
+    if (filterProductId !== "all" && c.productId !== filterProductId) return false;
+    if (onlyLate && !c.deliveries.some((d) => deliveryState(c, d).late)) return false;
+    if (!q) return true;
+    const product = products.find((p) => p.id === c.productId);
+    return (
+      c.number.toLowerCase().includes(q) ||
+      c.counterparty.toLowerCase().includes(q) ||
+      c.decimalNumber.toLowerCase().includes(q) ||
+      (product?.name ?? "").toLowerCase().includes(q)
+    );
+  });
 
   return (
     <div className="flex-1 min-h-0 overflow-auto">
@@ -102,11 +119,40 @@ function ContractsPage() {
         </div>
       </header>
 
-      {contracts.length === 0 && (
-        <p className="p-6 text-sm text-muted-foreground">Договоров пока нет.</p>
+      <div className="flex flex-wrap items-center gap-2 border-b border-border px-6 py-3">
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Поиск: договор, контрагент, децимальный №…"
+            className="w-72 rounded-md border border-border bg-background px-2 py-1.5 pl-7 text-xs text-foreground"
+          />
+        </div>
+        <select
+          value={filterProductId}
+          onChange={(e) => setFilterProductId(e.target.value)}
+          className="rounded-md border border-border bg-background px-2 py-1.5 text-xs text-foreground"
+          aria-label="Фильтр по изделию"
+        >
+          <option value="all">Все изделия</option>
+          {products.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+        <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <input type="checkbox" checked={onlyLate} onChange={(e) => setOnlyLate(e.target.checked)} />
+          только с просрочкой
+        </label>
+      </div>
+
+      {visibleContracts.length === 0 && (
+        <p className="p-6 text-sm text-muted-foreground">Договоры не найдены.</p>
       )}
 
-      {!editing && contracts.length > 0 && (
+      {!editing && visibleContracts.length > 0 && (
         <div className="p-6">
           <div className="overflow-x-auto rounded-lg border border-border bg-card">
             <table className="w-full min-w-[900px] text-left text-xs">
@@ -122,7 +168,7 @@ function ContractsPage() {
                 </tr>
               </thead>
               <tbody>
-                {contracts.map((c) => {
+                {visibleContracts.map((c) => {
                   const product = products.find((p) => p.id === c.productId);
                   const total = c.deliveries.reduce((s, d) => s + d.quantity, 0);
                   const hasLate = c.deliveries.some((d) => deliveryState(c, d).late);
@@ -203,7 +249,7 @@ function ContractsPage() {
 
       {editing && (
         <div className="space-y-4 p-6">
-          {contracts.map((c) => {
+          {visibleContracts.map((c) => {
           const product = products.find((p) => p.id === c.productId);
           const productBatches = batches.filter((b) => b.productId === c.productId);
           const hasLate = c.deliveries.some((d) =>
