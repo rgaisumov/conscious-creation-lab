@@ -1,7 +1,8 @@
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import { useProduction, type RouteTarget } from "@/lib/production/store";
 import * as R from "@/lib/production/route-ops";
-import type { ComponentType } from "@/lib/production/types";
+import { nodeOf, transferHours } from "@/lib/production/workload";
+import type { ComponentType, Operation } from "@/lib/production/types";
 
 export const TYPE_LABEL: Record<ComponentType, string> = {
   material: "Материал",
@@ -12,13 +13,17 @@ export const TYPE_LABEL: Record<ComponentType, string> = {
 
 /** Shared editor of the technological route (operations + their inputs/outputs). */
 export function RouteEditor({ target }: { target: RouteTarget }) {
-  const { getRoute, mutateRoute } = useProduction();
+  const { getRoute, mutateRoute, workcenters, transfers } = useProduction();
   const route = getRoute(target);
   if (!route) return null;
+
+  const transitionHours = (from: Operation, to: Operation) =>
+    transferHours(transfers, nodeOf(from), nodeOf(to));
 
   const ops = R.sortedOps(route);
   const compById = new Map(route.components.map((c) => [c.id, c]));
   const purchasable = route.components.filter((c) => c.type !== "semi-product");
+
 
   const InsertRow = ({ index }: { index: number }) => (
     <div className="flex justify-center py-1">
