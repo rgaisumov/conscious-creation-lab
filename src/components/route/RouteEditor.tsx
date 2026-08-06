@@ -104,9 +104,78 @@ export function RouteEditor({ target }: { target: RouteTarget }) {
                 </button>
               </div>
 
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <label className="flex items-center gap-1 text-xs text-muted-foreground">
+                  Участок
+                  <select
+                    value={op.workcenterId ?? ""}
+                    onChange={(e) =>
+                      mutateRoute(target, (r) =>
+                        R.updateOperation(r, op.id, { workcenterId: e.target.value || null }),
+                      )
+                    }
+                    className="rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground"
+                  >
+                    <option value="">— не задан —</option>
+                    {workcenters.map((w) => (
+                      <option key={w.id} value={w.id}>
+                        {w.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <input
+                    type="checkbox"
+                    checked={!!op.outsourceOrg}
+                    onChange={(e) =>
+                      mutateRoute(target, (r) =>
+                        R.updateOperation(r, op.id, {
+                          outsourceOrg: e.target.checked ? "Подрядчик" : undefined,
+                          outsourceDays: e.target.checked ? (op.outsourceDays ?? 5) : undefined,
+                        }),
+                      )
+                    }
+                  />
+                  аутсорс
+                </label>
+                {op.outsourceOrg !== undefined && (
+                  <>
+                    <input
+                      value={op.outsourceOrg}
+                      onChange={(e) =>
+                        mutateRoute(target, (r) => R.updateOperation(r, op.id, { outsourceOrg: e.target.value }))
+                      }
+                      placeholder="Организация"
+                      className="w-44 rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground"
+                    />
+                    <label className="flex items-center gap-1 text-xs text-muted-foreground">
+                      оборот, дн
+                      <input
+                        type="number"
+                        min={0}
+                        value={op.outsourceDays ?? 0}
+                        onChange={(e) =>
+                          mutateRoute(target, (r) =>
+                            R.updateOperation(r, op.id, { outsourceDays: Number(e.target.value) }),
+                          )
+                        }
+                        className="w-16 rounded-md border border-border bg-background px-2 py-1 text-xs tabular-nums text-foreground"
+                      />
+                    </label>
+                  </>
+                )}
+                {prev && transitionHours(prev, op) > 0 && (
+                  <span className="rounded border border-border px-2 py-0.5 text-[11px] text-muted-foreground">
+                    транспортировка с предыдущего узла: {transitionHours(prev, op)} ч
+                  </span>
+                )}
+              </div>
+
               <div className="mt-3 text-[10px] uppercase tracking-wider text-muted-foreground">
                 Закупаемые компоненты операции
               </div>
+
               <div className="mt-1.5 flex flex-wrap gap-1.5">
                 {purchasable.map((c) => {
                   const on = op.inputComponentIds.includes(c.id);
