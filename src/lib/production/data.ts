@@ -1,4 +1,4 @@
-import type { Batch, Contract, Product } from "./types";
+import type { Batch, Contract, Product, TransferTime, Workcenter } from "./types";
 
 export const initialProducts: Product[] = [
   {
@@ -117,6 +117,7 @@ export const initialProducts: Product[] = [
     operations: [
       {
         id: "montazh",
+        workcenterId: "wc-payka",
         name: "Монтаж",
         responsible: "Иванов И.И.",
         durationHours: 8,
@@ -127,6 +128,7 @@ export const initialProducts: Product[] = [
       },
       {
         id: "sborka",
+        workcenterId: "wc-sborka",
         name: "Сборка",
         responsible: "Петров П.П.",
         durationHours: 4,
@@ -136,6 +138,7 @@ export const initialProducts: Product[] = [
       },
       {
         id: "proverka-1",
+        workcenterId: "wc-proverka",
         name: "Проверка 1",
         responsible: "Сидоров С.С.",
         durationHours: 2,
@@ -145,6 +148,7 @@ export const initialProducts: Product[] = [
       },
       {
         id: "lakirovka",
+        workcenterId: "wc-lak",
         name: "Лакировка",
         responsible: "Кузнецов К.К.",
         durationHours: 3,
@@ -154,6 +158,7 @@ export const initialProducts: Product[] = [
       },
       {
         id: "proverka-2",
+        workcenterId: "wc-proverka",
         name: "Проверка 2",
         responsible: "Сидоров С.С.",
         durationHours: 2,
@@ -163,6 +168,7 @@ export const initialProducts: Product[] = [
       },
       {
         id: "ispyt-klimat",
+        workcenterId: "wc-ispyt",
         name: "Климатические",
         responsible: "Николаев Н.Н.",
         durationHours: 3,
@@ -173,6 +179,7 @@ export const initialProducts: Product[] = [
       },
       {
         id: "ispyt-vibro",
+        workcenterId: "wc-ispyt",
         name: "Вибрационные",
         responsible: "Николаев Н.Н.",
         durationHours: 2,
@@ -184,6 +191,7 @@ export const initialProducts: Product[] = [
       },
       {
         id: "ispyt-elektro",
+        workcenterId: "wc-ispyt",
         name: "Электрические",
         responsible: "Николаев Н.Н.",
         durationHours: 1,
@@ -194,6 +202,7 @@ export const initialProducts: Product[] = [
       },
       {
         id: "upakovka-op",
+        workcenterId: "wc-upak",
         name: "Упаковка",
         responsible: "Фёдоров Ф.Ф.",
         durationHours: 1,
@@ -241,6 +250,7 @@ export const initialProducts: Product[] = [
     operations: [
       {
         id: "d-montazh",
+        workcenterId: "wc-payka",
         name: "Монтаж",
         responsible: "Иванов И.И.",
         durationHours: 5,
@@ -250,6 +260,7 @@ export const initialProducts: Product[] = [
       },
       {
         id: "d-sborka",
+        workcenterId: "wc-sborka",
         name: "Сборка",
         responsible: "Петров П.П.",
         durationHours: 3,
@@ -259,6 +270,7 @@ export const initialProducts: Product[] = [
       },
       {
         id: "d-ispytaniya",
+        workcenterId: "wc-ispyt",
         name: "Испытания",
         responsible: "Николаев Н.Н.",
         durationHours: 4,
@@ -339,4 +351,22 @@ export const initialContracts: Contract[] = [
     signedDate: "2026-04-02",
     deliveries: [{ id: "c-204-d1", date: "2026-11-30", quantity: 40, batchIds: [] }],
   },
+];
+
+export const initialWorkcenters: Workcenter[] = [
+  { id: "wc-payka", name: "Участок пайки", workers: 4, hoursPerWorkerPerWeek: 40 },
+  { id: "wc-sborka", name: "Участок сборки", workers: 3, hoursPerWorkerPerWeek: 40 },
+  { id: "wc-proverka", name: "Участок проверки", workers: 2, hoursPerWorkerPerWeek: 40 },
+  { id: "wc-lak", name: "Участок лакировки", workers: 1, hoursPerWorkerPerWeek: 40 },
+  { id: "wc-ispyt", name: "Участок испытаний", workers: 2, hoursPerWorkerPerWeek: 40 },
+  { id: "wc-upak", name: "Участок упаковки", workers: 1, hoursPerWorkerPerWeek: 40 },
+];
+
+export const initialTransfers: TransferTime[] = [
+  { fromNode: "wc-payka", toNode: "wc-sborka", hours: 2 },
+  { fromNode: "wc-sborka", toNode: "wc-proverka", hours: 1 },
+  { fromNode: "wc-proverka", toNode: "wc-lak", hours: 2 },
+  { fromNode: "wc-lak", toNode: "wc-proverka", hours: 2 },
+  { fromNode: "wc-proverka", toNode: "wc-ispyt", hours: 3 },
+  { fromNode: "wc-ispyt", toNode: "wc-upak", hours: 1 },
 ];
