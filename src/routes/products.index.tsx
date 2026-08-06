@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Plus } from "lucide-react";
+import { useState } from "react";
+import { Plus, Search } from "lucide-react";
 import { useProduction } from "@/lib/production/store";
 
 export const Route = createFileRoute("/products/")({
@@ -23,6 +24,21 @@ export const Route = createFileRoute("/products/")({
 function ProductsPage() {
   const { products, batches, addProduct, summaryOf } = useProduction();
   const navigate = useNavigate();
+  const [query, setQuery] = useState("");
+  const [withBatches, setWithBatches] = useState(false);
+
+  const q = query.trim().toLowerCase();
+  const visible = products.filter((p) => {
+    if (withBatches && !batches.some((b) => b.productId === p.id)) return false;
+    if (!q) return true;
+    return (
+      p.name.toLowerCase().includes(q) ||
+      p.version.toLowerCase().includes(q) ||
+      (p.note ?? "").toLowerCase().includes(q) ||
+      p.operations.some((o) => o.name.toLowerCase().includes(q)) ||
+      p.components.some((c) => c.name.toLowerCase().includes(q))
+    );
+  });
 
   return (
     <div className="flex-1 min-h-0 overflow-auto">
@@ -46,8 +62,29 @@ function ProductsPage() {
         </button>
       </header>
 
+      <div className="flex flex-wrap items-center gap-2 border-b border-border px-6 py-3">
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Поиск: изделие, операция, компонент…"
+            className="w-72 rounded-md border border-border bg-background px-2 py-1.5 pl-7 text-xs text-foreground"
+          />
+        </div>
+        <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <input type="checkbox" checked={withBatches} onChange={(e) => setWithBatches(e.target.checked)} />
+          только с партиями
+        </label>
+      </div>
+
       <div className="space-y-4 p-6">
-        {products.map((p) => {
+        {visible.length === 0 && (
+          <div className="rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+            Изделия не найдены.
+          </div>
+        )}
+        {visible.map((p) => {
           const own = batches.filter((b) => b.productId === p.id);
           return (
             <section key={p.id} id={p.id} className="rounded-lg border border-border bg-card p-4">
