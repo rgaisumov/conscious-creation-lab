@@ -31,6 +31,12 @@ export interface Operation {
   outputComponentId: string | null;
   /** Optional OperationGroup id (OG001) */
   groupId?: string;
+  /** Участок, на котором выполняется операция. */
+  workcenterId?: string | null;
+  /** Если задано — операция отдана на аутсорс в стороннюю организацию. */
+  outsourceOrg?: string;
+  /** Оборот у подрядчика, календарные дни (для аутсорса). */
+  outsourceDays?: number;
   note?: string;
 }
 
@@ -39,6 +45,25 @@ export interface OperationGroup {
   id: string;
   name: string;
 }
+
+/** Производственный участок (пайки, лакировки, проверки...). */
+export interface Workcenter {
+  id: string;
+  name: string;
+  /** Число рабочих на участке. */
+  workers: number;
+  /** Часов на одного рабочего в неделю. */
+  hoursPerWorkerPerWeek: number;
+  note?: string;
+}
+
+/** Время транспортировки между узлами маршрута (участок или организация-подрядчик). */
+export interface TransferTime {
+  fromNode: string;
+  toNode: string;
+  hours: number;
+}
+
 
 /** Product stores manufacturing knowledge (PM001). */
 export interface Product {
