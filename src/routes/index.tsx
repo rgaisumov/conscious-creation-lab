@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { AlertTriangle, ArrowRight, CalendarClock, Plus } from "lucide-react";
+import { AlertTriangle, ArrowRight, CalendarClock, Plus, Search } from "lucide-react";
 import { useProduction } from "@/lib/production/store";
 import type { Batch, BatchHealth, Summary } from "@/lib/production/types";
 
