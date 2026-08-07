@@ -82,7 +82,27 @@ CREATE TRIGGER on_auth_user_created_profile
 AFTER INSERT ON auth.users
 FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
+-- Bootstrap: the very first user who signs up becomes admin
+CREATE OR REPLACE FUNCTION public.handle_first_user_admin()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM public.user_roles WHERE role = 'admin') THEN
+        INSERT INTO public.user_roles (user_id, role) VALUES (NEW.id, 'admin');
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER on_auth_user_first_admin
+AFTER INSERT ON auth.users
+FOR EACH ROW EXECUTE FUNCTION public.handle_first_user_admin();
+
 -- Workcenters (production units)
+
 CREATE TABLE public.workcenters (
     id text PRIMARY KEY,
     name text NOT NULL,
