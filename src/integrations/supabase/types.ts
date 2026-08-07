@@ -14,16 +14,330 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      batches: {
+        Row: {
+          completed: Json
+          created_at: string
+          created_by: string | null
+          due_date: string
+          id: string
+          note: string | null
+          number: string
+          ordered_qty: number
+          product_id: string
+          route_override: Json | null
+          shipped_qty: number
+          updated_at: string
+        }
+        Insert: {
+          completed?: Json
+          created_at?: string
+          created_by?: string | null
+          due_date: string
+          id: string
+          note?: string | null
+          number: string
+          ordered_qty?: number
+          product_id: string
+          route_override?: Json | null
+          shipped_qty?: number
+          updated_at?: string
+        }
+        Update: {
+          completed?: Json
+          created_at?: string
+          created_by?: string | null
+          due_date?: string
+          id?: string
+          note?: string | null
+          number?: string
+          ordered_qty?: number
+          product_id?: string
+          route_override?: Json | null
+          shipped_qty?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "batches_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contract_deliveries: {
+        Row: {
+          contract_id: string
+          date: string
+          id: string
+          quantity: number
+        }
+        Insert: {
+          contract_id: string
+          date: string
+          id: string
+          quantity?: number
+        }
+        Update: {
+          contract_id?: string
+          date?: string
+          id?: string
+          quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_deliveries_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contracts: {
+        Row: {
+          counterparty: string
+          created_at: string
+          created_by: string | null
+          decimal_number: string
+          id: string
+          note: string | null
+          number: string
+          product_id: string
+          signed_date: string
+          updated_at: string
+        }
+        Insert: {
+          counterparty: string
+          created_at?: string
+          created_by?: string | null
+          decimal_number: string
+          id: string
+          note?: string | null
+          number: string
+          product_id: string
+          signed_date: string
+          updated_at?: string
+        }
+        Update: {
+          counterparty?: string
+          created_at?: string
+          created_by?: string | null
+          decimal_number?: string
+          id?: string
+          note?: string | null
+          number?: string
+          product_id?: string
+          signed_date?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contracts_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      delivery_batches: {
+        Row: {
+          batch_id: string
+          delivery_id: string
+        }
+        Insert: {
+          batch_id: string
+          delivery_id: string
+        }
+        Update: {
+          batch_id?: string
+          delivery_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_batches_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_batches_delivery_id_fkey"
+            columns: ["delivery_id"]
+            isOneToOne: false
+            referencedRelation: "contract_deliveries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          archived: boolean
+          assembled_operation_id: string | null
+          components: Json
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          note: string | null
+          operation_groups: Json
+          operations: Json
+          tested_operation_id: string | null
+          updated_at: string
+          version: string
+        }
+        Insert: {
+          archived?: boolean
+          assembled_operation_id?: string | null
+          components?: Json
+          created_at?: string
+          created_by?: string | null
+          id: string
+          name: string
+          note?: string | null
+          operation_groups?: Json
+          operations?: Json
+          tested_operation_id?: string | null
+          updated_at?: string
+          version?: string
+        }
+        Update: {
+          archived?: boolean
+          assembled_operation_id?: string | null
+          components?: Json
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          note?: string | null
+          operation_groups?: Json
+          operations?: Json
+          tested_operation_id?: string | null
+          updated_at?: string
+          version?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          department: string | null
+          display_name: string | null
+          id: string
+          role_title: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          department?: string | null
+          display_name?: string | null
+          id: string
+          role_title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          department?: string | null
+          display_name?: string | null
+          id?: string
+          role_title?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      transfer_times: {
+        Row: {
+          created_at: string
+          from_node: string
+          hours: number
+          id: string
+          to_node: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          from_node: string
+          hours?: number
+          id: string
+          to_node: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          from_node?: string
+          hours?: number
+          id?: string
+          to_node?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      workcenters: {
+        Row: {
+          created_at: string
+          hours_per_worker_per_week: number
+          id: string
+          name: string
+          note: string | null
+          updated_at: string
+          workers: number
+        }
+        Insert: {
+          created_at?: string
+          hours_per_worker_per_week?: number
+          id: string
+          name: string
+          note?: string | null
+          updated_at?: string
+          workers?: number
+        }
+        Update: {
+          created_at?: string
+          hours_per_worker_per_week?: number
+          id?: string
+          name?: string
+          note?: string | null
+          updated_at?: string
+          workers?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "production_manager" | "workcenter_master" | "viewer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +464,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "production_manager", "workcenter_master", "viewer"],
+    },
   },
 } as const
