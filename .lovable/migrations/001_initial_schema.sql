@@ -4,6 +4,20 @@
 -- Roles enum
 CREATE TYPE public.app_role AS ENUM ('admin', 'production_manager', 'workcenter_master', 'viewer');
 
+-- Security definer function to check roles (must be created before RLS policies use it)
+CREATE OR REPLACE FUNCTION public.has_role(_user_id uuid, _role app_role)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+    SELECT EXISTS (
+        SELECT 1 FROM public.user_roles
+        WHERE user_id = _user_id AND role = _role
+    );
+$$;
+
 -- User roles (separate table, never on profiles)
 CREATE TABLE public.user_roles (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -26,19 +40,6 @@ CREATE POLICY "Users can read their own roles" ON public.user_roles
 FOR SELECT TO authenticated
 USING (auth.uid() = user_id);
 
--- Security definer function to check roles (avoids RLS recursion)
-CREATE OR REPLACE FUNCTION public.has_role(_user_id uuid, _role app_role)
-RETURNS boolean
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = public
-AS $$
-    SELECT EXISTS (
-        SELECT 1 FROM public.user_roles
-        WHERE user_id = _user_id AND role = _role
-    );
-$$;
 
 -- Profiles (user-facing data)
 CREATE TABLE public.profiles (
