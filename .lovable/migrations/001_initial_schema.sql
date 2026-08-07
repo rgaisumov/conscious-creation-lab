@@ -1,22 +1,10 @@
 -- Production Management System schema
 -- Multi-user web app with roles and server-side data storage
 
--- Roles enum
-CREATE TYPE public.app_role AS ENUM ('admin', 'production_manager', 'workcenter_master', 'viewer');
+-- Reset idempotent for initial setup
+DROP TYPE IF EXISTS public.app_role CASCADE;
 
--- Security definer function to check roles (must be created before RLS policies use it)
-CREATE OR REPLACE FUNCTION public.has_role(_user_id uuid, _role app_role)
-RETURNS boolean
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = public
-AS $$
-    SELECT EXISTS (
-        SELECT 1 FROM public.user_roles
-        WHERE user_id = _user_id AND role = _role
-    );
-$$;
+CREATE TYPE public.app_role AS ENUM ('admin', 'production_manager', 'workcenter_master', 'viewer');
 
 -- User roles (separate table, never on profiles)
 CREATE TABLE public.user_roles (
@@ -31,6 +19,20 @@ GRANT ALL ON public.user_roles TO service_role;
 
 ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
 
+-- Security definer function to check roles
+CREATE OR REPLACE FUNCTION public.has_role(_user_id uuid, _role app_role)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+    SELECT EXISTS (
+        SELECT 1 FROM public.user_roles
+        WHERE user_id = _user_id AND role = _role
+    );
+$$;
+
 CREATE POLICY "Admins can manage roles" ON public.user_roles
 FOR ALL TO authenticated
 USING (public.has_role(auth.uid(), 'admin'))
@@ -39,7 +41,6 @@ WITH CHECK (public.has_role(auth.uid(), 'admin'));
 CREATE POLICY "Users can read their own roles" ON public.user_roles
 FOR SELECT TO authenticated
 USING (auth.uid() = user_id);
-
 
 -- Profiles (user-facing data)
 CREATE TABLE public.profiles (
@@ -65,6 +66,8 @@ USING (auth.uid() = id)
 WITH CHECK (auth.uid() = id);
 
 -- Trigger to auto-create profile on signup
+DROP FUNCTION IF EXISTS public.handle_new_user();
+
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -78,11 +81,15 @@ BEGIN
 END;
 $$;
 
+DROP TRIGGER IF EXISTS on_auth_user_created_profile ON auth.users;
+
 CREATE TRIGGER on_auth_user_created_profile
 AFTER INSERT ON auth.users
 FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
 -- Bootstrap: the very first user who signs up becomes admin
+DROP FUNCTION IF EXISTS public.handle_first_user_admin();
+
 CREATE OR REPLACE FUNCTION public.handle_first_user_admin()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -97,12 +104,13 @@ BEGIN
 END;
 $$;
 
+DROP TRIGGER IF EXISTS on_auth_user_first_admin ON auth.users;
+
 CREATE TRIGGER on_auth_user_first_admin
 AFTER INSERT ON auth.users
 FOR EACH ROW EXECUTE FUNCTION public.handle_first_user_admin();
 
 -- Workcenters (production units)
-
 CREATE TABLE public.workcenters (
     id text PRIMARY KEY,
     name text NOT NULL,
@@ -296,7 +304,8 @@ INSERT INTO public.workcenters (id, name, workers, hours_per_worker_per_week) VA
 ('wc-proverka', 'Участок проверки', 2, 40),
 ('wc-lak', 'Участок лакировки', 1, 40),
 ('wc-ispyt', 'Участок испытаний', 2, 40),
-('wc-upak', 'Участок упаковки', 1, 40);
+('wc-upak', 'Участок упаковки', 1, 40)
+ON CONFLICT (id) DO NOTHING;
 
 -- Seed transfer times
 INSERT INTO public.transfer_times (id, from_node, to_node, hours) VALUES
@@ -305,7 +314,8 @@ INSERT INTO public.transfer_times (id, from_node, to_node, hours) VALUES
 ('tt-3', 'wc-proverka', 'wc-lak', 2),
 ('tt-4', 'wc-lak', 'wc-proverka', 2),
 ('tt-5', 'wc-proverka', 'wc-ispyt', 3),
-('tt-6', 'wc-ispyt', 'wc-upak', 1);
+('tt-6', 'wc-ispyt', 'wc-upak', 1)
+ON CONFLICT (id) DO NOTHING;
 
 -- Seed product 1 (Изделие №1)
 INSERT INTO public.products (
@@ -351,7 +361,16 @@ INSERT INTO public.products (
       {"id":"ispyt-elektro","workcenterId":"wc-ispyt","name":"Электрические","responsible":"Николаев Н.Н.","durationHours":1,"order":8,"groupId":"grp-ispytaniya","inputComponentIds":["sp-vibro"],"outputComponentId":"sp-ispytaniya"},
       {"id":"upakovka-op","workcenterId":"wc-upak","name":"Упаковка","responsible":"Фёдоров Ф.Ф.","durationHours":1,"order":9,"inputComponentIds":["sp-ispytaniya","upakovka"],"outputComponentId":null}
     ]'::jsonb
-);
+)
+ON CONFLICT (id) DO UPDATE SET
+    name = EXCLUDED.name,
+    version = EXCLUDED.version,
+    note = EXCLUDED.note,
+    assembled_operation_id = EXCLUDED.assembled_operation_id,
+    tested_operation_id = EXCLUDED.tested_operation_id,
+    operation_groups = EXCLUDED.operation_groups,
+    components = EXCLUDED.components,
+    operations = EXCLUDED.operations;
 
 -- Seed product 2 (Изделие №2)
 INSERT INTO public.products (
@@ -379,29 +398,60 @@ INSERT INTO public.products (
       {"id":"d-sborka","workcenterId":"wc-sborka","name":"Сборка","responsible":"Петров П.П.","durationHours":3,"order":2,"inputComponentIds":["d-sp-montazh","d-korpus","d-osn"],"outputComponentId":"d-sp-sborka"},
       {"id":"d-ispytaniya","workcenterId":"wc-ispyt","name":"Испытания","responsible":"Николаев Н.Н.","durationHours":4,"order":3,"inputComponentIds":["d-sp-sborka"],"outputComponentId":"d-sp-ispyt"}
     ]'::jsonb
-);
+)
+ON CONFLICT (id) DO UPDATE SET
+    name = EXCLUDED.name,
+    version = EXCLUDED.version,
+    note = EXCLUDED.note,
+    assembled_operation_id = EXCLUDED.assembled_operation_id,
+    tested_operation_id = EXCLUDED.tested_operation_id,
+    operation_groups = EXCLUDED.operation_groups,
+    components = EXCLUDED.components,
+    operations = EXCLUDED.operations;
 
 -- Seed batches
 INSERT INTO public.batches (id, product_id, number, ordered_qty, shipped_qty, due_date, note, completed) VALUES
 ('b-1-24', 'izdelie-1', 'П-2026/024', 100, 5, '2026-07-20', 'Заказ по договору №118', '{"montazh":40,"sborka":25,"proverka-1":20,"lakirovka":15,"proverka-2":10,"ispyt-klimat":8,"ispyt-vibro":6,"ispyt-elektro":6,"upakovka-op":5}'::jsonb),
 ('b-1-25', 'izdelie-1', 'П-2026/025', 50, 0, '2026-09-15', '', '{"montazh":10}'::jsonb),
-('b-2-07', 'izdelie-2', 'Д-2026/007', 40, 0, '2026-08-05', '', '{"d-montazh":30,"d-sborka":22,"d-ispytaniya":18}'::jsonb);
+('b-2-07', 'izdelie-2', 'Д-2026/007', 40, 0, '2026-08-05', '', '{"d-montazh":30,"d-sborka":22,"d-ispytaniya":18}'::jsonb)
+ON CONFLICT (id) DO UPDATE SET
+    product_id = EXCLUDED.product_id,
+    number = EXCLUDED.number,
+    ordered_qty = EXCLUDED.ordered_qty,
+    shipped_qty = EXCLUDED.shipped_qty,
+    due_date = EXCLUDED.due_date,
+    note = EXCLUDED.note,
+    completed = EXCLUDED.completed;
 
 -- Seed contracts
 INSERT INTO public.contracts (id, number, counterparty, product_id, decimal_number, signed_date, note) VALUES
 ('c-118', '№118/2026', 'АО "Заказчик-1"', 'izdelie-1', 'АБВГ.464349.001', '2026-02-10', ''),
-('c-204', '№204/2026', 'ООО "Заказчик-2"', 'izdelie-2', 'АБВГ.464349.002', '2026-04-02', '');
+('c-204', '№204/2026', 'ООО "Заказчик-2"', 'izdelie-2', 'АБВГ.464349.002', '2026-04-02', '')
+ON CONFLICT (id) DO UPDATE SET
+    number = EXCLUDED.number,
+    counterparty = EXCLUDED.counterparty,
+    product_id = EXCLUDED.product_id,
+    decimal_number = EXCLUDED.decimal_number,
+    signed_date = EXCLUDED.signed_date,
+    note = EXCLUDED.note;
 
 INSERT INTO public.contract_deliveries (id, contract_id, date, quantity) VALUES
 ('c-118-d1', 'c-118', '2026-07-31', 100),
 ('c-118-d2', 'c-118', '2026-10-31', 50),
-('c-204-d1', 'c-204', '2026-11-30', 40);
+('c-204-d1', 'c-204', '2026-11-30', 40)
+ON CONFLICT (id) DO UPDATE SET
+    contract_id = EXCLUDED.contract_id,
+    date = EXCLUDED.date,
+    quantity = EXCLUDED.quantity;
 
 INSERT INTO public.delivery_batches (delivery_id, batch_id) VALUES
 ('c-118-d1', 'b-1-24'),
-('c-118-d2', 'b-1-25');
+('c-118-d2', 'b-1-25')
+ON CONFLICT (delivery_id, batch_id) DO NOTHING;
 
 -- Updated_at triggers
+DROP FUNCTION IF EXISTS public.update_updated_at_column();
+
 CREATE OR REPLACE FUNCTION public.update_updated_at_column()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -412,6 +462,13 @@ BEGIN
     RETURN NEW;
 END;
 $$;
+
+DROP TRIGGER IF EXISTS update_workcenters_updated_at ON public.workcenters;
+DROP TRIGGER IF EXISTS update_transfer_times_updated_at ON public.transfer_times;
+DROP TRIGGER IF EXISTS update_products_updated_at ON public.products;
+DROP TRIGGER IF EXISTS update_batches_updated_at ON public.batches;
+DROP TRIGGER IF EXISTS update_contracts_updated_at ON public.contracts;
+DROP TRIGGER IF EXISTS update_profiles_updated_at ON public.profiles;
 
 CREATE TRIGGER update_workcenters_updated_at BEFORE UPDATE ON public.workcenters
 FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
