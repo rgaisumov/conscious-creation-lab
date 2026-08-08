@@ -77,7 +77,16 @@ export function AppSidebar() {
           {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           {theme === "dark" ? "Светлая тема" : "Тёмная тема"}
         </button>
+        <button
+          type="button"
+          onClick={signOut}
+          className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+        >
+          <LogOut className="h-4 w-4" />
+          Выйти
+        </button>
       </div>
+
     </aside>
   );
 }
