@@ -78,22 +78,88 @@ type Ctx = {
 
   importState: (s: { products: Product[]; batches: Batch[]; contracts?: Contract[] }) => void;
   exportState: () => { products: Product[]; batches: Batch[]; contracts: Contract[] };
+
+  /** Данные ещё загружаются с сервера. */
+  loading: boolean;
+  /** Есть ли у текущего пользователя право изменять данные. */
+  canEdit: boolean;
+  /** Роль текущего пользователя. */
+  role: string | null;
+  /** Последняя ошибка сохранения на сервер. */
+  saveError: string | null;
+  saving: boolean;
 };
 
 const ProductionContext = createContext<Ctx | null>(null);
 
 export function ProductionProvider({ children }: { children: ReactNode }) {
-  const [products, setProducts] = useState<Product[]>(initialProducts);
-  const [batches, setBatches] = useState<Batch[]>(initialBatches);
-  const [contracts, setContracts] = useState<Contract[]>(initialContracts);
-  const [workcenters, setWorkcenters] = useState<Workcenter[]>(initialWorkcenters);
-  const [transfers, setTransfers] = useState<TransferTime[]>(initialTransfers);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [batches, setBatches] = useState<Batch[]>([]);
+  const [contracts, setContracts] = useState<Contract[]>([]);
+  const [workcenters, setWorkcenters] = useState<Workcenter[]>([]);
+  const [transfers, setTransfers] = useState<TransferTime[]>([]);
   const [theme, setThemeState] = useState<Theme>("dark");
+  const [loading, setLoading] = useState(true);
+  const [canEdit, setCanEdit] = useState(false);
+  const [role, setRole] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const loadedRef = useRef(false);
+
+  // Первичная загрузка состояния с сервера
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) {
+        setLoading(false);
+        return;
+      }
+      try {
+        const state = await loadState();
+        if (cancelled) return;
+        setProducts(state.products);
+        setBatches(state.batches);
+        setContracts(state.contracts);
+        setWorkcenters(state.workcenters);
+        setTransfers(state.transfers);
+        setCanEdit(state.canEdit);
+        setRole(state.role);
+        loadedRef.current = true;
+      } catch (e) {
+        if (!cancelled) setSaveError(e instanceof Error ? e.message : String(e));
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Автосохранение изменений на сервер
+  const firstSaveSkip = useRef(true);
+  useEffect(() => {
+    if (!loadedRef.current || !canEdit) return;
+    if (firstSaveSkip.current) {
+      firstSaveSkip.current = false;
+      return;
+    }
+    const timer = setTimeout(() => {
+      setSaving(true);
+      saveState({ data: { products, batches, contracts, workcenters, transfers } })
+        .then(() => setSaveError(null))
+        .catch((e: unknown) => setSaveError(e instanceof Error ? e.message : String(e)))
+        .finally(() => setSaving(false));
+    }, 700);
+    return () => clearTimeout(timer);
+  }, [products, batches, contracts, workcenters, transfers, canEdit]);
 
   useEffect(() => {
     const stored = window.localStorage.getItem("pm-theme");
     if (stored === "light" || stored === "dark") setThemeState(stored);
   }, []);
+
 
   useEffect(() => {
     const root = document.documentElement;
