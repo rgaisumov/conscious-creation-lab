@@ -7,13 +7,9 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import {
-  initialBatches,
-  initialContracts,
-  initialProducts,
-  initialTransfers,
-  initialWorkcenters,
-} from "./data";
+import { loadState, saveState } from "./production.functions";
+import { supabase } from "@/integrations/supabase/client";
+
 import { computeSummary } from "./calculator";
 import { cloneRoute, type RouteDraft } from "./route-ops";
 import type {
