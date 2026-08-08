@@ -11,8 +11,6 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
-import { ProductionProvider } from "@/lib/production/store";
-import { AppSidebar } from "@/components/shell/AppSidebar";
 
 
 function NotFoundComponent() {
