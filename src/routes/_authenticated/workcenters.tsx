@@ -12,7 +12,7 @@ import {
   workersNeeded,
 } from "@/lib/production/workload";
 
-export const Route = createFileRoute("/workcenters")({
+export const Route = createFileRoute("/_authenticated/workcenters")({
   head: () => ({
     meta: [
       { title: "Участки — загрузка, аутсорс и транспортировка" },

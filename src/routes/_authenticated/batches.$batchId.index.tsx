@@ -7,7 +7,7 @@ import { RouteEditor } from "@/components/route/RouteEditor";
 import { AVAILABILITY_DOT, AVAILABILITY_RANK, STATUS_META, fmtQty } from "@/components/batch/status";
 import type { OperationComputed } from "@/lib/production/types";
 
-export const Route = createFileRoute("/batches/$batchId/")({
+export const Route = createFileRoute("/_authenticated/batches/$batchId/")({
   component: TechRoutePage,
 });
 

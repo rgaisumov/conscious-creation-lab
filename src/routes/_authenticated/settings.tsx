@@ -3,7 +3,7 @@ import { useRef } from "react";
 import { Download, Upload } from "lucide-react";
 import { useProduction } from "@/lib/production/store";
 
-export const Route = createFileRoute("/settings")({
+export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
     meta: [
       { title: "Настройки — тема и данные производства" },

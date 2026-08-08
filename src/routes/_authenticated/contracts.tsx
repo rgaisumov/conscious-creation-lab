@@ -4,7 +4,7 @@ import { Pencil, Plus, Trash2, X, Eye, Search } from "lucide-react";
 import { useProduction } from "@/lib/production/store";
 import type { Batch, Contract, ContractDelivery } from "@/lib/production/types";
 
-export const Route = createFileRoute("/contracts")({
+export const Route = createFileRoute("/_authenticated/contracts")({
   head: () => ({
     meta: [
       { title: "Договоры — сроки поставки и привязка партий" },
