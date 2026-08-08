@@ -1,6 +1,9 @@
-import { Link, useRouterState } from "@tanstack/react-router";
-import { Factory, Boxes, FileText, Settings, Moon, Sun, Gauge } from "lucide-react";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
+import { Factory, Boxes, FileText, Settings, Moon, Sun, Gauge, LogOut } from "lucide-react";
 import { useProduction } from "@/lib/production/store";
+import { supabase } from "@/integrations/supabase/client";
+
 
 const items = [
   { title: "Производство", url: "/", icon: Factory },
