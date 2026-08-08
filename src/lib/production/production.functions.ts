@@ -18,6 +18,8 @@ export type ServerState = {
 
 export type LoadedState = ServerState & { canEdit: boolean; role: string | null };
 
+const asJson = (v: unknown) => v as never;
+
 const EDIT_ROLES = ["admin", "production_manager"];
 
 export const loadState = createServerFn({ method: "GET" })
@@ -66,9 +68,9 @@ export const loadState = createServerFn({ method: "GET" })
       archived: r.archived,
       assembledOperationId: r.assembled_operation_id ?? undefined,
       testedOperationId: r.tested_operation_id ?? undefined,
-      components: (r.components ?? []) as Product["components"],
-      operations: (r.operations ?? []) as Product["operations"],
-      operationGroups: (r.operation_groups ?? []) as Product["operationGroups"],
+      components: (r.components ?? []) as unknown as Product["components"],
+      operations: (r.operations ?? []) as unknown as Product["operations"],
+      operationGroups: (r.operation_groups ?? []) as unknown as Product["operationGroups"],
     }));
 
     const batches: Batch[] = (batchesRes.data ?? []).map((r) => ({
@@ -79,8 +81,8 @@ export const loadState = createServerFn({ method: "GET" })
       shippedQty: r.shipped_qty,
       dueDate: r.due_date,
       note: r.note ?? undefined,
-      completed: (r.completed ?? {}) as Record<string, number>,
-      routeOverride: (r.route_override ?? undefined) as Batch["routeOverride"],
+      completed: (r.completed ?? {}) as unknown as Record<string, number>,
+      routeOverride: (r.route_override ?? undefined) as unknown as Batch["routeOverride"],
     }));
 
     const linksByDelivery = new Map<string, string[]>();
@@ -170,9 +172,9 @@ export const saveState = createServerFn({ method: "POST" })
             archived: p.archived ?? false,
             assembled_operation_id: p.assembledOperationId ?? null,
             tested_operation_id: p.testedOperationId ?? null,
-            components: p.components,
-            operations: p.operations,
-            operation_groups: p.operationGroups,
+            components: asJson(p.components),
+            operations: asJson(p.operations),
+            operation_groups: asJson(p.operationGroups),
           })),
         )
       ).error,
@@ -189,8 +191,8 @@ export const saveState = createServerFn({ method: "POST" })
             shipped_qty: b.shippedQty,
             due_date: b.dueDate,
             note: b.note ?? null,
-            completed: b.completed,
-            route_override: b.routeOverride ?? null,
+            completed: asJson(b.completed),
+            route_override: asJson(b.routeOverride ?? null),
           })),
         )
       ).error,
