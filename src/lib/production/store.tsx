@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -567,6 +568,11 @@ export function ProductionProvider({ children }: { children: ReactNode }) {
       setTransfer,
       importState,
       exportState,
+      loading,
+      canEdit,
+      role,
+      saveError,
+      saving,
     }),
     [
       products,
@@ -605,6 +611,11 @@ export function ProductionProvider({ children }: { children: ReactNode }) {
       setTransfer,
       importState,
       exportState,
+      loading,
+      canEdit,
+      role,
+      saveError,
+      saving,
     ],
   );
 
