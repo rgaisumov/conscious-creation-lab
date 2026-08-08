@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -61,11 +62,15 @@ function AuthPage() {
 
   const google = async () => {
     setError(null);
-    const { error: err } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: window.location.origin },
+    const result = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin,
     });
-    if (err) setError(err.message);
+    if (result.error) {
+      setError(result.error.message);
+      return;
+    }
+    if ("redirected" in result && result.redirected) return;
+    navigate({ to: "/" });
   };
 
   return (
