@@ -8,7 +8,7 @@ import { componentUnitsAvailable } from "@/lib/production/calculator";
 import { AVAILABILITY_DOT, STATUS_META, fmtQty } from "@/components/batch/status";
 import type { ComponentType } from "@/lib/production/types";
 
-export const Route = createFileRoute("/batches/$batchId/graph")({
+export const Route = createFileRoute("/_authenticated/batches/$batchId/graph")({
   component: GraphPage,
 });
 

@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Plus, Search } from "lucide-react";
 import { useProduction } from "@/lib/production/store";
 
-export const Route = createFileRoute("/products/")({
+export const Route = createFileRoute("/_authenticated/products/")({
   head: () => ({
     meta: [
       { title: "Изделия — конструкторские данные и партии" },

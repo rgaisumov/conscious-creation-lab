@@ -2,7 +2,7 @@ import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-r
 import { ArrowLeft } from "lucide-react";
 import { useProduction } from "@/lib/production/store";
 
-export const Route = createFileRoute("/products/$productId")({
+export const Route = createFileRoute("/_authenticated/products/$productId")({
   head: () => ({
     meta: [
       { title: "Редактор изделия — тех.маршрут и граф" },

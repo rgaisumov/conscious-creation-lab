@@ -4,7 +4,7 @@ import { effectiveProductFor, useProduction } from "@/lib/production/store";
 import { BatchWorkspaceProvider, useWorkspace } from "@/lib/production/workspace";
 import { RightPanel } from "@/components/batch/RightPanel";
 
-export const Route = createFileRoute("/batches/$batchId")({
+export const Route = createFileRoute("/_authenticated/batches/$batchId")({
   head: () => ({
     meta: [
       { title: "Партия — тех.маршрут и узкое место" },

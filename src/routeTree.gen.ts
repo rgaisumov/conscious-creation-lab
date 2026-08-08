@@ -9,150 +9,174 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as WorkcentersRouteImport } from './routes/workcenters'
-import { Route as SettingsRouteImport } from './routes/settings'
-import { Route as ProductsRouteImport } from './routes/products'
-import { Route as ContractsRouteImport } from './routes/contracts'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as ProductsIndexRouteImport } from './routes/products.index'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as SitemapXmlRouteImport } from './routes/sitemap.xml'
-import { Route as ProductsProductIdRouteImport } from './routes/products.$productId'
-import { Route as BatchesBatchIdRouteImport } from './routes/batches.$batchId'
-import { Route as ProductsProductIdIndexRouteImport } from './routes/products.$productId.index'
-import { Route as BatchesBatchIdIndexRouteImport } from './routes/batches.$batchId.index'
-import { Route as ProductsProductIdGraphRouteImport } from './routes/products.$productId.graph'
-import { Route as BatchesBatchIdGraphRouteImport } from './routes/batches.$batchId.graph'
-import { Route as BatchesBatchIdComponentsRouteImport } from './routes/batches.$batchId.components'
+import { Route as AuthenticatedWorkcentersRouteImport } from './routes/_authenticated/workcenters'
+import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
+import { Route as AuthenticatedProductsRouteImport } from './routes/_authenticated/products'
+import { Route as AuthenticatedContractsRouteImport } from './routes/_authenticated/contracts'
+import { Route as AuthenticatedProductsIndexRouteImport } from './routes/_authenticated/products.index'
+import { Route as AuthenticatedProductsProductIdRouteImport } from './routes/_authenticated/products.$productId'
+import { Route as AuthenticatedBatchesBatchIdRouteImport } from './routes/_authenticated/batches.$batchId'
+import { Route as AuthenticatedProductsProductIdIndexRouteImport } from './routes/_authenticated/products.$productId.index'
+import { Route as AuthenticatedBatchesBatchIdIndexRouteImport } from './routes/_authenticated/batches.$batchId.index'
+import { Route as AuthenticatedProductsProductIdGraphRouteImport } from './routes/_authenticated/products.$productId.graph'
+import { Route as AuthenticatedBatchesBatchIdGraphRouteImport } from './routes/_authenticated/batches.$batchId.graph'
+import { Route as AuthenticatedBatchesBatchIdComponentsRouteImport } from './routes/_authenticated/batches.$batchId.components'
 
-const WorkcentersRoute = WorkcentersRouteImport.update({
-  id: '/workcenters',
-  path: '/workcenters',
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SettingsRoute = SettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ProductsRoute = ProductsRouteImport.update({
-  id: '/products',
-  path: '/products',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ContractsRoute = ContractsRouteImport.update({
-  id: '/contracts',
-  path: '/contracts',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const IndexRoute = IndexRouteImport.update({
+const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ProductsIndexRoute = ProductsIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => ProductsRoute,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const SitemapXmlRoute = SitemapXmlRouteImport.update({
   id: '/sitemap/xml',
   path: '/sitemap/xml',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ProductsProductIdRoute = ProductsProductIdRouteImport.update({
-  id: '/$productId',
-  path: '/$productId',
-  getParentRoute: () => ProductsRoute,
+const AuthenticatedWorkcentersRoute =
+  AuthenticatedWorkcentersRouteImport.update({
+    id: '/workcenters',
+    path: '/workcenters',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const BatchesBatchIdRoute = BatchesBatchIdRouteImport.update({
-  id: '/batches/$batchId',
-  path: '/batches/$batchId',
-  getParentRoute: () => rootRouteImport,
+const AuthenticatedProductsRoute = AuthenticatedProductsRouteImport.update({
+  id: '/products',
+  path: '/products',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const ProductsProductIdIndexRoute = ProductsProductIdIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => ProductsProductIdRoute,
+const AuthenticatedContractsRoute = AuthenticatedContractsRouteImport.update({
+  id: '/contracts',
+  path: '/contracts',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const BatchesBatchIdIndexRoute = BatchesBatchIdIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => BatchesBatchIdRoute,
-} as any)
-const ProductsProductIdGraphRoute = ProductsProductIdGraphRouteImport.update({
-  id: '/graph',
-  path: '/graph',
-  getParentRoute: () => ProductsProductIdRoute,
-} as any)
-const BatchesBatchIdGraphRoute = BatchesBatchIdGraphRouteImport.update({
-  id: '/graph',
-  path: '/graph',
-  getParentRoute: () => BatchesBatchIdRoute,
-} as any)
-const BatchesBatchIdComponentsRoute =
-  BatchesBatchIdComponentsRouteImport.update({
+const AuthenticatedProductsIndexRoute =
+  AuthenticatedProductsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedProductsRoute,
+  } as any)
+const AuthenticatedProductsProductIdRoute =
+  AuthenticatedProductsProductIdRouteImport.update({
+    id: '/$productId',
+    path: '/$productId',
+    getParentRoute: () => AuthenticatedProductsRoute,
+  } as any)
+const AuthenticatedBatchesBatchIdRoute =
+  AuthenticatedBatchesBatchIdRouteImport.update({
+    id: '/batches/$batchId',
+    path: '/batches/$batchId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedProductsProductIdIndexRoute =
+  AuthenticatedProductsProductIdIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedProductsProductIdRoute,
+  } as any)
+const AuthenticatedBatchesBatchIdIndexRoute =
+  AuthenticatedBatchesBatchIdIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedBatchesBatchIdRoute,
+  } as any)
+const AuthenticatedProductsProductIdGraphRoute =
+  AuthenticatedProductsProductIdGraphRouteImport.update({
+    id: '/graph',
+    path: '/graph',
+    getParentRoute: () => AuthenticatedProductsProductIdRoute,
+  } as any)
+const AuthenticatedBatchesBatchIdGraphRoute =
+  AuthenticatedBatchesBatchIdGraphRouteImport.update({
+    id: '/graph',
+    path: '/graph',
+    getParentRoute: () => AuthenticatedBatchesBatchIdRoute,
+  } as any)
+const AuthenticatedBatchesBatchIdComponentsRoute =
+  AuthenticatedBatchesBatchIdComponentsRouteImport.update({
     id: '/components',
     path: '/components',
-    getParentRoute: () => BatchesBatchIdRoute,
+    getParentRoute: () => AuthenticatedBatchesBatchIdRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/contracts': typeof ContractsRoute
-  '/products': typeof ProductsRouteWithChildren
-  '/settings': typeof SettingsRoute
-  '/workcenters': typeof WorkcentersRoute
-  '/batches/$batchId': typeof BatchesBatchIdRouteWithChildren
-  '/products/$productId': typeof ProductsProductIdRouteWithChildren
+  '/': typeof AuthenticatedIndexRoute
+  '/auth': typeof AuthRoute
+  '/contracts': typeof AuthenticatedContractsRoute
+  '/products': typeof AuthenticatedProductsRouteWithChildren
+  '/settings': typeof AuthenticatedSettingsRoute
+  '/workcenters': typeof AuthenticatedWorkcentersRoute
   '/sitemap/xml': typeof SitemapXmlRoute
-  '/products/': typeof ProductsIndexRoute
-  '/batches/$batchId/components': typeof BatchesBatchIdComponentsRoute
-  '/batches/$batchId/graph': typeof BatchesBatchIdGraphRoute
-  '/products/$productId/graph': typeof ProductsProductIdGraphRoute
-  '/batches/$batchId/': typeof BatchesBatchIdIndexRoute
-  '/products/$productId/': typeof ProductsProductIdIndexRoute
+  '/batches/$batchId': typeof AuthenticatedBatchesBatchIdRouteWithChildren
+  '/products/$productId': typeof AuthenticatedProductsProductIdRouteWithChildren
+  '/products/': typeof AuthenticatedProductsIndexRoute
+  '/batches/$batchId/components': typeof AuthenticatedBatchesBatchIdComponentsRoute
+  '/batches/$batchId/graph': typeof AuthenticatedBatchesBatchIdGraphRoute
+  '/products/$productId/graph': typeof AuthenticatedProductsProductIdGraphRoute
+  '/batches/$batchId/': typeof AuthenticatedBatchesBatchIdIndexRoute
+  '/products/$productId/': typeof AuthenticatedProductsProductIdIndexRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/contracts': typeof ContractsRoute
-  '/settings': typeof SettingsRoute
-  '/workcenters': typeof WorkcentersRoute
+  '/auth': typeof AuthRoute
+  '/contracts': typeof AuthenticatedContractsRoute
+  '/settings': typeof AuthenticatedSettingsRoute
+  '/workcenters': typeof AuthenticatedWorkcentersRoute
   '/sitemap/xml': typeof SitemapXmlRoute
-  '/products': typeof ProductsIndexRoute
-  '/batches/$batchId/components': typeof BatchesBatchIdComponentsRoute
-  '/batches/$batchId/graph': typeof BatchesBatchIdGraphRoute
-  '/products/$productId/graph': typeof ProductsProductIdGraphRoute
-  '/batches/$batchId': typeof BatchesBatchIdIndexRoute
-  '/products/$productId': typeof ProductsProductIdIndexRoute
+  '/': typeof AuthenticatedIndexRoute
+  '/products': typeof AuthenticatedProductsIndexRoute
+  '/batches/$batchId/components': typeof AuthenticatedBatchesBatchIdComponentsRoute
+  '/batches/$batchId/graph': typeof AuthenticatedBatchesBatchIdGraphRoute
+  '/products/$productId/graph': typeof AuthenticatedProductsProductIdGraphRoute
+  '/batches/$batchId': typeof AuthenticatedBatchesBatchIdIndexRoute
+  '/products/$productId': typeof AuthenticatedProductsProductIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/contracts': typeof ContractsRoute
-  '/products': typeof ProductsRouteWithChildren
-  '/settings': typeof SettingsRoute
-  '/workcenters': typeof WorkcentersRoute
-  '/batches/$batchId': typeof BatchesBatchIdRouteWithChildren
-  '/products/$productId': typeof ProductsProductIdRouteWithChildren
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/_authenticated/contracts': typeof AuthenticatedContractsRoute
+  '/_authenticated/products': typeof AuthenticatedProductsRouteWithChildren
+  '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/workcenters': typeof AuthenticatedWorkcentersRoute
   '/sitemap/xml': typeof SitemapXmlRoute
-  '/products/': typeof ProductsIndexRoute
-  '/batches/$batchId/components': typeof BatchesBatchIdComponentsRoute
-  '/batches/$batchId/graph': typeof BatchesBatchIdGraphRoute
-  '/products/$productId/graph': typeof ProductsProductIdGraphRoute
-  '/batches/$batchId/': typeof BatchesBatchIdIndexRoute
-  '/products/$productId/': typeof ProductsProductIdIndexRoute
+  '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/batches/$batchId': typeof AuthenticatedBatchesBatchIdRouteWithChildren
+  '/_authenticated/products/$productId': typeof AuthenticatedProductsProductIdRouteWithChildren
+  '/_authenticated/products/': typeof AuthenticatedProductsIndexRoute
+  '/_authenticated/batches/$batchId/components': typeof AuthenticatedBatchesBatchIdComponentsRoute
+  '/_authenticated/batches/$batchId/graph': typeof AuthenticatedBatchesBatchIdGraphRoute
+  '/_authenticated/products/$productId/graph': typeof AuthenticatedProductsProductIdGraphRoute
+  '/_authenticated/batches/$batchId/': typeof AuthenticatedBatchesBatchIdIndexRoute
+  '/_authenticated/products/$productId/': typeof AuthenticatedProductsProductIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/auth'
     | '/contracts'
     | '/products'
     | '/settings'
     | '/workcenters'
+    | '/sitemap/xml'
     | '/batches/$batchId'
     | '/products/$productId'
-    | '/sitemap/xml'
     | '/products/'
     | '/batches/$batchId/components'
     | '/batches/$batchId/graph'
@@ -161,11 +185,12 @@ export interface FileRouteTypes {
     | '/products/$productId/'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/'
+    | '/auth'
     | '/contracts'
     | '/settings'
     | '/workcenters'
     | '/sitemap/xml'
+    | '/'
     | '/products'
     | '/batches/$batchId/components'
     | '/batches/$batchId/graph'
@@ -174,75 +199,52 @@ export interface FileRouteTypes {
     | '/products/$productId'
   id:
     | '__root__'
-    | '/'
-    | '/contracts'
-    | '/products'
-    | '/settings'
-    | '/workcenters'
-    | '/batches/$batchId'
-    | '/products/$productId'
+    | '/_authenticated'
+    | '/auth'
+    | '/_authenticated/contracts'
+    | '/_authenticated/products'
+    | '/_authenticated/settings'
+    | '/_authenticated/workcenters'
     | '/sitemap/xml'
-    | '/products/'
-    | '/batches/$batchId/components'
-    | '/batches/$batchId/graph'
-    | '/products/$productId/graph'
-    | '/batches/$batchId/'
-    | '/products/$productId/'
+    | '/_authenticated/'
+    | '/_authenticated/batches/$batchId'
+    | '/_authenticated/products/$productId'
+    | '/_authenticated/products/'
+    | '/_authenticated/batches/$batchId/components'
+    | '/_authenticated/batches/$batchId/graph'
+    | '/_authenticated/products/$productId/graph'
+    | '/_authenticated/batches/$batchId/'
+    | '/_authenticated/products/$productId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  ContractsRoute: typeof ContractsRoute
-  ProductsRoute: typeof ProductsRouteWithChildren
-  SettingsRoute: typeof SettingsRoute
-  WorkcentersRoute: typeof WorkcentersRoute
-  BatchesBatchIdRoute: typeof BatchesBatchIdRouteWithChildren
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AuthRoute: typeof AuthRoute
   SitemapXmlRoute: typeof SitemapXmlRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/workcenters': {
-      id: '/workcenters'
-      path: '/workcenters'
-      fullPath: '/workcenters'
-      preLoaderRoute: typeof WorkcentersRouteImport
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/settings': {
-      id: '/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof SettingsRouteImport
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/products': {
-      id: '/products'
-      path: '/products'
-      fullPath: '/products'
-      preLoaderRoute: typeof ProductsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/contracts': {
-      id: '/contracts'
-      path: '/contracts'
-      fullPath: '/contracts'
-      preLoaderRoute: typeof ContractsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/': {
-      id: '/'
+    '/_authenticated/': {
+      id: '/_authenticated/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/products/': {
-      id: '/products/'
-      path: '/'
-      fullPath: '/products/'
-      preLoaderRoute: typeof ProductsIndexRouteImport
-      parentRoute: typeof ProductsRoute
+      preLoaderRoute: typeof AuthenticatedIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/sitemap/xml': {
       id: '/sitemap/xml'
@@ -251,120 +253,175 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SitemapXmlRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/products/$productId': {
-      id: '/products/$productId'
+    '/_authenticated/workcenters': {
+      id: '/_authenticated/workcenters'
+      path: '/workcenters'
+      fullPath: '/workcenters'
+      preLoaderRoute: typeof AuthenticatedWorkcentersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/settings': {
+      id: '/_authenticated/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/products': {
+      id: '/_authenticated/products'
+      path: '/products'
+      fullPath: '/products'
+      preLoaderRoute: typeof AuthenticatedProductsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/contracts': {
+      id: '/_authenticated/contracts'
+      path: '/contracts'
+      fullPath: '/contracts'
+      preLoaderRoute: typeof AuthenticatedContractsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/products/': {
+      id: '/_authenticated/products/'
+      path: '/'
+      fullPath: '/products/'
+      preLoaderRoute: typeof AuthenticatedProductsIndexRouteImport
+      parentRoute: typeof AuthenticatedProductsRoute
+    }
+    '/_authenticated/products/$productId': {
+      id: '/_authenticated/products/$productId'
       path: '/$productId'
       fullPath: '/products/$productId'
-      preLoaderRoute: typeof ProductsProductIdRouteImport
-      parentRoute: typeof ProductsRoute
+      preLoaderRoute: typeof AuthenticatedProductsProductIdRouteImport
+      parentRoute: typeof AuthenticatedProductsRoute
     }
-    '/batches/$batchId': {
-      id: '/batches/$batchId'
+    '/_authenticated/batches/$batchId': {
+      id: '/_authenticated/batches/$batchId'
       path: '/batches/$batchId'
       fullPath: '/batches/$batchId'
-      preLoaderRoute: typeof BatchesBatchIdRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedBatchesBatchIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/products/$productId/': {
-      id: '/products/$productId/'
+    '/_authenticated/products/$productId/': {
+      id: '/_authenticated/products/$productId/'
       path: '/'
       fullPath: '/products/$productId/'
-      preLoaderRoute: typeof ProductsProductIdIndexRouteImport
-      parentRoute: typeof ProductsProductIdRoute
+      preLoaderRoute: typeof AuthenticatedProductsProductIdIndexRouteImport
+      parentRoute: typeof AuthenticatedProductsProductIdRoute
     }
-    '/batches/$batchId/': {
-      id: '/batches/$batchId/'
+    '/_authenticated/batches/$batchId/': {
+      id: '/_authenticated/batches/$batchId/'
       path: '/'
       fullPath: '/batches/$batchId/'
-      preLoaderRoute: typeof BatchesBatchIdIndexRouteImport
-      parentRoute: typeof BatchesBatchIdRoute
+      preLoaderRoute: typeof AuthenticatedBatchesBatchIdIndexRouteImport
+      parentRoute: typeof AuthenticatedBatchesBatchIdRoute
     }
-    '/products/$productId/graph': {
-      id: '/products/$productId/graph'
+    '/_authenticated/products/$productId/graph': {
+      id: '/_authenticated/products/$productId/graph'
       path: '/graph'
       fullPath: '/products/$productId/graph'
-      preLoaderRoute: typeof ProductsProductIdGraphRouteImport
-      parentRoute: typeof ProductsProductIdRoute
+      preLoaderRoute: typeof AuthenticatedProductsProductIdGraphRouteImport
+      parentRoute: typeof AuthenticatedProductsProductIdRoute
     }
-    '/batches/$batchId/graph': {
-      id: '/batches/$batchId/graph'
+    '/_authenticated/batches/$batchId/graph': {
+      id: '/_authenticated/batches/$batchId/graph'
       path: '/graph'
       fullPath: '/batches/$batchId/graph'
-      preLoaderRoute: typeof BatchesBatchIdGraphRouteImport
-      parentRoute: typeof BatchesBatchIdRoute
+      preLoaderRoute: typeof AuthenticatedBatchesBatchIdGraphRouteImport
+      parentRoute: typeof AuthenticatedBatchesBatchIdRoute
     }
-    '/batches/$batchId/components': {
-      id: '/batches/$batchId/components'
+    '/_authenticated/batches/$batchId/components': {
+      id: '/_authenticated/batches/$batchId/components'
       path: '/components'
       fullPath: '/batches/$batchId/components'
-      preLoaderRoute: typeof BatchesBatchIdComponentsRouteImport
-      parentRoute: typeof BatchesBatchIdRoute
+      preLoaderRoute: typeof AuthenticatedBatchesBatchIdComponentsRouteImport
+      parentRoute: typeof AuthenticatedBatchesBatchIdRoute
     }
   }
 }
 
-interface ProductsProductIdRouteChildren {
-  ProductsProductIdGraphRoute: typeof ProductsProductIdGraphRoute
-  ProductsProductIdIndexRoute: typeof ProductsProductIdIndexRoute
+interface AuthenticatedProductsProductIdRouteChildren {
+  AuthenticatedProductsProductIdGraphRoute: typeof AuthenticatedProductsProductIdGraphRoute
+  AuthenticatedProductsProductIdIndexRoute: typeof AuthenticatedProductsProductIdIndexRoute
 }
 
-const ProductsProductIdRouteChildren: ProductsProductIdRouteChildren = {
-  ProductsProductIdGraphRoute: ProductsProductIdGraphRoute,
-  ProductsProductIdIndexRoute: ProductsProductIdIndexRoute,
+const AuthenticatedProductsProductIdRouteChildren: AuthenticatedProductsProductIdRouteChildren =
+  {
+    AuthenticatedProductsProductIdGraphRoute:
+      AuthenticatedProductsProductIdGraphRoute,
+    AuthenticatedProductsProductIdIndexRoute:
+      AuthenticatedProductsProductIdIndexRoute,
+  }
+
+const AuthenticatedProductsProductIdRouteWithChildren =
+  AuthenticatedProductsProductIdRoute._addFileChildren(
+    AuthenticatedProductsProductIdRouteChildren,
+  )
+
+interface AuthenticatedProductsRouteChildren {
+  AuthenticatedProductsProductIdRoute: typeof AuthenticatedProductsProductIdRouteWithChildren
+  AuthenticatedProductsIndexRoute: typeof AuthenticatedProductsIndexRoute
 }
 
-const ProductsProductIdRouteWithChildren =
-  ProductsProductIdRoute._addFileChildren(ProductsProductIdRouteChildren)
-
-interface ProductsRouteChildren {
-  ProductsProductIdRoute: typeof ProductsProductIdRouteWithChildren
-  ProductsIndexRoute: typeof ProductsIndexRoute
+const AuthenticatedProductsRouteChildren: AuthenticatedProductsRouteChildren = {
+  AuthenticatedProductsProductIdRoute:
+    AuthenticatedProductsProductIdRouteWithChildren,
+  AuthenticatedProductsIndexRoute: AuthenticatedProductsIndexRoute,
 }
 
-const ProductsRouteChildren: ProductsRouteChildren = {
-  ProductsProductIdRoute: ProductsProductIdRouteWithChildren,
-  ProductsIndexRoute: ProductsIndexRoute,
+const AuthenticatedProductsRouteWithChildren =
+  AuthenticatedProductsRoute._addFileChildren(
+    AuthenticatedProductsRouteChildren,
+  )
+
+interface AuthenticatedBatchesBatchIdRouteChildren {
+  AuthenticatedBatchesBatchIdComponentsRoute: typeof AuthenticatedBatchesBatchIdComponentsRoute
+  AuthenticatedBatchesBatchIdGraphRoute: typeof AuthenticatedBatchesBatchIdGraphRoute
+  AuthenticatedBatchesBatchIdIndexRoute: typeof AuthenticatedBatchesBatchIdIndexRoute
 }
 
-const ProductsRouteWithChildren = ProductsRoute._addFileChildren(
-  ProductsRouteChildren,
-)
+const AuthenticatedBatchesBatchIdRouteChildren: AuthenticatedBatchesBatchIdRouteChildren =
+  {
+    AuthenticatedBatchesBatchIdComponentsRoute:
+      AuthenticatedBatchesBatchIdComponentsRoute,
+    AuthenticatedBatchesBatchIdGraphRoute:
+      AuthenticatedBatchesBatchIdGraphRoute,
+    AuthenticatedBatchesBatchIdIndexRoute:
+      AuthenticatedBatchesBatchIdIndexRoute,
+  }
 
-interface BatchesBatchIdRouteChildren {
-  BatchesBatchIdComponentsRoute: typeof BatchesBatchIdComponentsRoute
-  BatchesBatchIdGraphRoute: typeof BatchesBatchIdGraphRoute
-  BatchesBatchIdIndexRoute: typeof BatchesBatchIdIndexRoute
+const AuthenticatedBatchesBatchIdRouteWithChildren =
+  AuthenticatedBatchesBatchIdRoute._addFileChildren(
+    AuthenticatedBatchesBatchIdRouteChildren,
+  )
+
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedContractsRoute: typeof AuthenticatedContractsRoute
+  AuthenticatedProductsRoute: typeof AuthenticatedProductsRouteWithChildren
+  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedWorkcentersRoute: typeof AuthenticatedWorkcentersRoute
+  AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedBatchesBatchIdRoute: typeof AuthenticatedBatchesBatchIdRouteWithChildren
 }
 
-const BatchesBatchIdRouteChildren: BatchesBatchIdRouteChildren = {
-  BatchesBatchIdComponentsRoute: BatchesBatchIdComponentsRoute,
-  BatchesBatchIdGraphRoute: BatchesBatchIdGraphRoute,
-  BatchesBatchIdIndexRoute: BatchesBatchIdIndexRoute,
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedContractsRoute: AuthenticatedContractsRoute,
+  AuthenticatedProductsRoute: AuthenticatedProductsRouteWithChildren,
+  AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedWorkcentersRoute: AuthenticatedWorkcentersRoute,
+  AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedBatchesBatchIdRoute:
+    AuthenticatedBatchesBatchIdRouteWithChildren,
 }
 
-const BatchesBatchIdRouteWithChildren = BatchesBatchIdRoute._addFileChildren(
-  BatchesBatchIdRouteChildren,
-)
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  ContractsRoute: ContractsRoute,
-  ProductsRoute: ProductsRouteWithChildren,
-  SettingsRoute: SettingsRoute,
-  WorkcentersRoute: WorkcentersRoute,
-  BatchesBatchIdRoute: BatchesBatchIdRouteWithChildren,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AuthRoute: AuthRoute,
   SitemapXmlRoute: SitemapXmlRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

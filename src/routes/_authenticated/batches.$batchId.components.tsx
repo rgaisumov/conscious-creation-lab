@@ -7,7 +7,7 @@ import { componentUnitsAvailable } from "@/lib/production/calculator";
 import { AVAILABILITY_DOT, fmtQty } from "@/components/batch/status";
 import type { ComponentType } from "@/lib/production/types";
 
-export const Route = createFileRoute("/batches/$batchId/components")({
+export const Route = createFileRoute("/_authenticated/batches/$batchId/components")({
   component: ComponentsPage,
 });
 

@@ -5,7 +5,7 @@ import { useProduction } from "@/lib/production/store";
 import type { Batch, BatchHealth, Summary } from "@/lib/production/types";
 
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
     meta: [
       { title: "Производство — узкие места партий" },

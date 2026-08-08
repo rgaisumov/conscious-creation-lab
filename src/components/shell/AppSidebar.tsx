@@ -1,6 +1,9 @@
-import { Link, useRouterState } from "@tanstack/react-router";
-import { Factory, Boxes, FileText, Settings, Moon, Sun, Gauge } from "lucide-react";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
+import { Factory, Boxes, FileText, Settings, Moon, Sun, Gauge, LogOut } from "lucide-react";
 import { useProduction } from "@/lib/production/store";
+import { supabase } from "@/integrations/supabase/client";
+
 
 const items = [
   { title: "Производство", url: "/", icon: Factory },
@@ -11,11 +14,27 @@ const items = [
 ];
 
 
+const ROLE_LABEL: Record<string, string> = {
+  admin: "Администратор",
+  production_manager: "Начальник производства",
+  workcenter_master: "Мастер участка",
+  viewer: "Наблюдатель",
+};
+
 export function AppSidebar() {
-  const { theme, toggleTheme, batches } = useProduction();
+  const { theme, toggleTheme, batches, loading, role, saving, saveError } = useProduction();
   const pathname = useRouterState({ select: (r) => r.location.pathname });
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const isActive = (url: string) => (url === "/" ? pathname === "/" : pathname.startsWith(url));
+
+  const signOut = async () => {
+    await queryClient.cancelQueries();
+    queryClient.clear();
+    await supabase.auth.signOut();
+    navigate({ to: "/auth", replace: true });
+  };
 
   return (
     <aside className="w-60 shrink-0 border-r border-border bg-sidebar flex flex-col">
@@ -24,9 +43,13 @@ export function AppSidebar() {
           Управление производством
         </div>
         <div className="mt-1 text-xs text-muted-foreground">
-          {batches.length} активных партий
+          {loading ? "Загрузка данных…" : `${batches.length} активных партий`}
         </div>
+        {role && <div className="mt-1 text-xs text-muted-foreground">{ROLE_LABEL[role] ?? role}</div>}
+        {saving && <div className="mt-1 text-xs text-muted-foreground">Сохранение…</div>}
+        {saveError && <div className="mt-1 text-xs text-destructive">Ошибка сохранения</div>}
       </div>
+
 
       <nav className="flex-1 p-2 space-y-1">
         {items.map((item) => (
@@ -54,7 +77,16 @@ export function AppSidebar() {
           {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           {theme === "dark" ? "Светлая тема" : "Тёмная тема"}
         </button>
+        <button
+          type="button"
+          onClick={signOut}
+          className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+        >
+          <LogOut className="h-4 w-4" />
+          Выйти
+        </button>
       </div>
+
     </aside>
   );
 }
