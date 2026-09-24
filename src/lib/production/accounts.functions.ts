@@ -160,16 +160,13 @@ export const setPermissions = createServerFn({ method: "POST" })
 
 export const listJournal = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }).parse(d))
+  .inputValidator((d) => z.object({ from: z.string().datetime(), to: z.string().datetime() }).parse(d))
   .handler(async ({ data, context }) => {
-    const start = new Date(`${data.date}T00:00:00`);
-    const end = new Date(start);
-    end.setDate(end.getDate() + 1);
     const { data: rows, error } = await context.supabase
       .from("audit_log")
       .select("*")
-      .gte("created_at", start.toISOString())
-      .lt("created_at", end.toISOString())
+      .gte("created_at", data.from)
+      .lt("created_at", data.to)
       .order("created_at", { ascending: false })
       .limit(1000);
     if (error) throw new Error(error.message);
