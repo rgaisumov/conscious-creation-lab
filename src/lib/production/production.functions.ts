@@ -1,5 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { SECTIONS, type Permissions, type SectionId } from "./sections";
+import { diffForAudit } from "./audit";
 import type {
   Batch,
   Contract,
@@ -16,11 +18,30 @@ export type ServerState = {
   transfers: TransferTime[];
 };
 
-export type LoadedState = ServerState & { canEdit: boolean; role: string | null };
+export type LoadedState = ServerState & {
+  canEdit: boolean;
+  role: string | null;
+  isAdmin: boolean;
+  permissions: Permissions;
+};
 
 const asJson = (v: unknown) => v as never;
 
 const EDIT_ROLES = ["admin", "production_manager"];
+
+function permsFor(roles: string[], rows: { section: string; can_edit: boolean }[]) {
+  const isAdmin = roles.includes("admin");
+  const permissions: Permissions = {};
+  if (isAdmin) for (const sct of SECTIONS) permissions[sct.id] = "edit";
+  else {
+    const legacyEdit = roles.some((r) => EDIT_ROLES.includes(r));
+    if (rows.length === 0) {
+      for (const sct of SECTIONS) if (sct.id !== "settings") permissions[sct.id] = legacyEdit ? "edit" : "view";
+    }
+    for (const r of rows) permissions[r.section as SectionId] = r.can_edit ? "edit" : "view";
+  }
+  return { isAdmin, permissions, canEdit: Object.values(permissions).includes("edit") };
+}
 
 export const loadState = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -46,6 +67,7 @@ export const loadState = createServerFn({ method: "GET" })
       supabase.from("transfer_times").select("*"),
       supabase.from("user_roles").select("role").eq("user_id", userId),
     ]);
+    const permsRes = await supabase.from("section_permissions").select("section, can_edit").eq("user_id", userId);
 
     const firstError = [
       productsRes.error,
@@ -131,8 +153,8 @@ export const loadState = createServerFn({ method: "GET" })
       contracts,
       workcenters,
       transfers,
-      role: roles[0] ?? null,
-      canEdit: roles.some((r) => EDIT_ROLES.includes(r)),
+      role: roles.includes("admin") ? "admin" : (roles[0] ?? null),
+      ...permsFor(roles, permsRes.data ?? []),
     };
   });
 
@@ -140,14 +162,26 @@ export const saveState = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: ServerState) => data)
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
     const { products, batches, contracts, workcenters, transfers } = data;
+
+    const [rolesRes, permsRes, oldP, oldB, oldC, oldW, profRes] = await Promise.all([
+      supabase.from("user_roles").select("role").eq("user_id", userId),
+      supabase.from("section_permissions").select("section, can_edit").eq("user_id", userId),
+      supabase.from("products").select("id, name, components, operations, operation_groups, archived"),
+      supabase.from("batches").select("id, number, product_id, completed, shipped_qty, ordered_qty, due_date, route_override"),
+      supabase.from("contracts").select("id, number, counterparty"),
+      supabase.from("workcenters").select("id, name, workers, hours_per_worker_per_week"),
+      supabase.from("profiles").select("display_name").eq("id", userId).maybeSingle(),
+    ]);
+    const { permissions } = permsFor((rolesRes.data ?? []).map((r) => r.role as string), permsRes.data ?? []);
+    const can = (sct: SectionId) => permissions[sct] === "edit";
 
     const fail = (error: { message: string } | null) => {
       if (error) throw new Error(error.message);
     };
 
-    fail(
+    if (can("workcenters")) fail(
       (
         await supabase.from("workcenters").upsert(
           workcenters.map((w) => ({
@@ -161,7 +195,7 @@ export const saveState = createServerFn({ method: "POST" })
       ).error,
     );
 
-    fail(
+    if (can("products")) fail(
       (
         await supabase.from("products").upsert(
           products.map((p) => ({
@@ -180,7 +214,7 @@ export const saveState = createServerFn({ method: "POST" })
       ).error,
     );
 
-    fail(
+    if (can("production")) fail(
       (
         await supabase.from("batches").upsert(
           batches.map((b) => ({
@@ -198,7 +232,7 @@ export const saveState = createServerFn({ method: "POST" })
       ).error,
     );
 
-    fail(
+    if (can("contracts")) fail(
       (
         await supabase.from("contracts").upsert(
           contracts.map((c) => ({
@@ -222,7 +256,7 @@ export const saveState = createServerFn({ method: "POST" })
         quantity: d.quantity,
       })),
     );
-    if (deliveries.length) fail((await supabase.from("contract_deliveries").upsert(deliveries)).error);
+    if (can("contracts") && deliveries.length) fail((await supabase.from("contract_deliveries").upsert(deliveries)).error);
 
     const links = contracts.flatMap((c) =>
       c.deliveries.flatMap((d) => d.batchIds.map((b) => ({ delivery_id: d.id, batch_id: b }))),
@@ -235,12 +269,13 @@ export const saveState = createServerFn({ method: "POST" })
         .error);
     };
 
-    await prune("contracts", contracts.map((c) => c.id));
-    await prune("batches", batches.map((b) => b.id));
-    await prune("products", products.map((p) => p.id));
-    await prune("workcenters", workcenters.map((w) => w.id));
+    if (can("contracts")) await prune("contracts", contracts.map((c) => c.id));
+    if (can("production")) await prune("batches", batches.map((b) => b.id));
+    if (can("products")) await prune("products", products.map((p) => p.id));
+    if (can("workcenters")) await prune("workcenters", workcenters.map((w) => w.id));
 
     const deliveryIds = deliveries.map((d) => d.id);
+    if (can("contracts")) {
     fail(
       (
         await (deliveryIds.length
@@ -254,7 +289,9 @@ export const saveState = createServerFn({ method: "POST" })
 
     fail((await supabase.from("delivery_batches").delete().neq("delivery_id", "")).error);
     if (links.length) fail((await supabase.from("delivery_batches").insert(links)).error);
+    }
 
+    if (can("workcenters")) {
     fail((await supabase.from("transfer_times").delete().neq("id", "")).error);
     if (transfers.length) {
       fail(
@@ -268,6 +305,18 @@ export const saveState = createServerFn({ method: "POST" })
             })),
           )
         ).error,
+      );
+    }
+
+    }
+
+    const entries = diffForAudit(
+      { products: oldP.data ?? [], batches: oldB.data ?? [], contracts: oldC.data ?? [], workcenters: oldW.data ?? [] },
+      data,
+    ).filter((e) => can(e.section as SectionId));
+    if (entries.length) {
+      await supabase.from("audit_log").insert(
+        entries.map((e) => ({ ...e, user_id: userId, user_name: profRes.data?.display_name ?? null })),
       );
     }
 
