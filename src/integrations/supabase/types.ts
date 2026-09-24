@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_log: {
+        Row: {
+          action: string
+          created_at: string
+          entity: string | null
+          id: string
+          section: string
+          user_id: string
+          user_name: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          entity?: string | null
+          id?: string
+          section: string
+          user_id: string
+          user_name?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          entity?: string | null
+          id?: string
+          section?: string
+          user_id?: string
+          user_name?: string | null
+        }
+        Relationships: []
+      }
       batches: {
         Row: {
           completed: Json
@@ -227,6 +257,7 @@ export type Database = {
           department: string | null
           display_name: string | null
           id: string
+          login: string | null
           role_title: string | null
           updated_at: string
         }
@@ -235,6 +266,7 @@ export type Database = {
           department?: string | null
           display_name?: string | null
           id: string
+          login?: string | null
           role_title?: string | null
           updated_at?: string
         }
@@ -243,8 +275,27 @@ export type Database = {
           department?: string | null
           display_name?: string | null
           id?: string
+          login?: string | null
           role_title?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      section_permissions: {
+        Row: {
+          can_edit: boolean
+          section: string
+          user_id: string
+        }
+        Insert: {
+          can_edit?: boolean
+          section: string
+          user_id: string
+        }
+        Update: {
+          can_edit?: boolean
+          section?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -328,6 +379,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_edit_section: {
+        Args: { _section: string; _user_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
