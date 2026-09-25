@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useRef } from "react";
 import { Download, Upload } from "lucide-react";
 import { useProduction } from "@/lib/production/store";
+import { AccountsSection } from "@/components/settings/AccountsSection";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
@@ -21,7 +22,7 @@ export const Route = createFileRoute("/_authenticated/settings")({
 });
 
 function SettingsPage() {
-  const { theme, setTheme, exportState, importState } = useProduction();
+  const { theme, setTheme, exportState, importState, isAdmin } = useProduction();
   const fileRef = useRef<HTMLInputElement>(null);
 
   const download = () => {
@@ -97,6 +98,8 @@ function SettingsPage() {
             />
           </div>
         </section>
+
+        {isAdmin && <AccountsSection />}
       </div>
     </div>
   );

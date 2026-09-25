@@ -1,18 +1,17 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { Factory, Boxes, FileText, Settings, Moon, Sun, Gauge, LogOut } from "lucide-react";
+import { Factory, Boxes, FileText, Settings, Moon, Sun, Gauge, LogOut, ScrollText } from "lucide-react";
 import { useProduction } from "@/lib/production/store";
 import { supabase } from "@/integrations/supabase/client";
 
-
-const items = [
-  { title: "Производство", url: "/", icon: Factory },
-  { title: "Изделия", url: "/products", icon: Boxes },
-  { title: "Участки", url: "/workcenters", icon: Gauge },
-  { title: "Договоры", url: "/contracts", icon: FileText },
-  { title: "Настройки", url: "/settings", icon: Settings },
-];
-
+const allItems = [
+  { id: "production", title: "Производство", url: "/", icon: Factory },
+  { id: "products", title: "Изделия", url: "/products", icon: Boxes },
+  { id: "workcenters", title: "Участки", url: "/workcenters", icon: Gauge },
+  { id: "contracts", title: "Договоры", url: "/contracts", icon: FileText },
+  { id: "journal", title: "Журнал", url: "/journal", icon: ScrollText },
+  { id: "settings", title: "Настройки", url: "/settings", icon: Settings },
+] as const;
 
 const ROLE_LABEL: Record<string, string> = {
   admin: "Администратор",
@@ -22,10 +21,12 @@ const ROLE_LABEL: Record<string, string> = {
 };
 
 export function AppSidebar() {
-  const { theme, toggleTheme, batches, loading, role, saving, saveError } = useProduction();
+  const { theme, toggleTheme, batches, loading, role, saving, saveError, permissions } = useProduction();
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  // Настройки видны всем (тема), остальное — по правам
+  const items = allItems.filter((i) => i.id === "settings" || loading || permissions[i.id]);
 
   const isActive = (url: string) => (url === "/" ? pathname === "/" : pathname.startsWith(url));
 

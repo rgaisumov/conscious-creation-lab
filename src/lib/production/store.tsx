@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { loadState, saveState } from "./production.functions";
+import type { Permissions } from "./sections";
 import { supabase } from "@/integrations/supabase/client";
 
 import { computeSummary } from "./calculator";
@@ -86,6 +87,9 @@ type Ctx = {
   canEdit: boolean;
   /** Роль текущего пользователя. */
   role: string | null;
+  /** Права по разделам: edit / view; нет ключа — раздел скрыт. */
+  permissions: Permissions;
+  isAdmin: boolean;
   /** Последняя ошибка сохранения на сервер. */
   saveError: string | null;
   saving: boolean;
@@ -103,6 +107,8 @@ export function ProductionProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [canEdit, setCanEdit] = useState(false);
   const [role, setRole] = useState<string | null>(null);
+  const [permissions, setPermissions] = useState<Permissions>({});
+  const [isAdmin, setIsAdmin] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const loadedRef = useRef(false);
@@ -126,6 +132,8 @@ export function ProductionProvider({ children }: { children: ReactNode }) {
         setTransfers(state.transfers);
         setCanEdit(state.canEdit);
         setRole(state.role);
+        setPermissions(state.permissions);
+        setIsAdmin(state.isAdmin);
         loadedRef.current = true;
       } catch (e) {
         if (!cancelled) setSaveError(e instanceof Error ? e.message : String(e));
@@ -571,6 +579,8 @@ export function ProductionProvider({ children }: { children: ReactNode }) {
       loading,
       canEdit,
       role,
+      permissions,
+      isAdmin,
       saveError,
       saving,
     }),
@@ -614,6 +624,8 @@ export function ProductionProvider({ children }: { children: ReactNode }) {
       loading,
       canEdit,
       role,
+      permissions,
+      isAdmin,
       saveError,
       saving,
     ],
