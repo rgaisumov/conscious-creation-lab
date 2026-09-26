@@ -1,0 +1,10 @@
+GRANT SELECT ON public.user_roles TO authenticated;
+GRANT ALL ON public.user_roles TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.section_permissions TO authenticated;
+GRANT ALL ON public.section_permissions TO service_role;
+GRANT SELECT, INSERT ON public.audit_log TO authenticated;
+GRANT ALL ON public.audit_log TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.products, public.batches, public.contracts, public.contract_deliveries, public.delivery_batches, public.workcenters, public.transfer_times, public.profiles TO authenticated;
+GRANT ALL ON public.products, public.batches, public.contracts, public.contract_deliveries, public.delivery_batches, public.workcenters, public.transfer_times, public.profiles TO service_role;
+GRANT EXECUTE ON FUNCTION public.has_role(uuid, public.app_role) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.can_edit_section(uuid, text) TO authenticated;

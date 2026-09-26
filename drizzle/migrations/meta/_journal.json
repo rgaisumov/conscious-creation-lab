@@ -8,6 +8,13 @@
       "when": 1790244926568,
       "tag": "0000_permissions_and_audit_log",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790420071924,
+      "tag": "0001_grant_role_tables",
+      "breakpoints": true
     }
   ]
 }
