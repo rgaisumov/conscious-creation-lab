@@ -1,6 +1,6 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { Factory, Boxes, FileText, Settings, Moon, Sun, Gauge, LogOut, ScrollText } from "lucide-react";
+import { Factory, Boxes, FileText, Settings, Moon, Sun, Gauge, LogOut, ScrollText, Warehouse } from "lucide-react";
 import { useProduction } from "@/lib/production/store";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -9,6 +9,7 @@ const allItems = [
   { id: "products", title: "Изделия", url: "/products", icon: Boxes },
   { id: "workcenters", title: "Участки", url: "/workcenters", icon: Gauge },
   { id: "contracts", title: "Договоры", url: "/contracts", icon: FileText },
+  { id: "warehouse", title: "Склад", url: "/warehouse", icon: Warehouse },
   { id: "journal", title: "Журнал", url: "/journal", icon: ScrollText },
   { id: "settings", title: "Настройки", url: "/settings", icon: Settings },
 ] as const;
