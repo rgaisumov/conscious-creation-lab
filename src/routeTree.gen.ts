@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as SitemapXmlRouteImport } from './routes/sitemap.xml'
 import { Route as AuthenticatedWorkcentersRouteImport } from './routes/_authenticated/workcenters'
+import { Route as AuthenticatedWarehouseRouteImport } from './routes/_authenticated/warehouse'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedProductsRouteImport } from './routes/_authenticated/products'
 import { Route as AuthenticatedJournalRouteImport } from './routes/_authenticated/journal'
@@ -52,6 +53,11 @@ const AuthenticatedWorkcentersRoute =
     path: '/workcenters',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedWarehouseRoute = AuthenticatedWarehouseRouteImport.update({
+  id: '/warehouse',
+  path: '/warehouse',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -128,6 +134,7 @@ export interface FileRoutesByFullPath {
   '/journal': typeof AuthenticatedJournalRoute
   '/products': typeof AuthenticatedProductsRouteWithChildren
   '/settings': typeof AuthenticatedSettingsRoute
+  '/warehouse': typeof AuthenticatedWarehouseRoute
   '/workcenters': typeof AuthenticatedWorkcentersRoute
   '/sitemap/xml': typeof SitemapXmlRoute
   '/batches/$batchId': typeof AuthenticatedBatchesBatchIdRouteWithChildren
@@ -144,6 +151,7 @@ export interface FileRoutesByTo {
   '/contracts': typeof AuthenticatedContractsRoute
   '/journal': typeof AuthenticatedJournalRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/warehouse': typeof AuthenticatedWarehouseRoute
   '/workcenters': typeof AuthenticatedWorkcentersRoute
   '/sitemap/xml': typeof SitemapXmlRoute
   '/': typeof AuthenticatedIndexRoute
@@ -162,6 +170,7 @@ export interface FileRoutesById {
   '/_authenticated/journal': typeof AuthenticatedJournalRoute
   '/_authenticated/products': typeof AuthenticatedProductsRouteWithChildren
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/warehouse': typeof AuthenticatedWarehouseRoute
   '/_authenticated/workcenters': typeof AuthenticatedWorkcentersRoute
   '/sitemap/xml': typeof SitemapXmlRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
@@ -183,6 +192,7 @@ export interface FileRouteTypes {
     | '/journal'
     | '/products'
     | '/settings'
+    | '/warehouse'
     | '/workcenters'
     | '/sitemap/xml'
     | '/batches/$batchId'
@@ -199,6 +209,7 @@ export interface FileRouteTypes {
     | '/contracts'
     | '/journal'
     | '/settings'
+    | '/warehouse'
     | '/workcenters'
     | '/sitemap/xml'
     | '/'
@@ -216,6 +227,7 @@ export interface FileRouteTypes {
     | '/_authenticated/journal'
     | '/_authenticated/products'
     | '/_authenticated/settings'
+    | '/_authenticated/warehouse'
     | '/_authenticated/workcenters'
     | '/sitemap/xml'
     | '/_authenticated/'
@@ -270,6 +282,13 @@ declare module '@tanstack/react-router' {
       path: '/workcenters'
       fullPath: '/workcenters'
       preLoaderRoute: typeof AuthenticatedWorkcentersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/warehouse': {
+      id: '/_authenticated/warehouse'
+      path: '/warehouse'
+      fullPath: '/warehouse'
+      preLoaderRoute: typeof AuthenticatedWarehouseRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/settings': {
@@ -419,6 +438,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedJournalRoute: typeof AuthenticatedJournalRoute
   AuthenticatedProductsRoute: typeof AuthenticatedProductsRouteWithChildren
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedWarehouseRoute: typeof AuthenticatedWarehouseRoute
   AuthenticatedWorkcentersRoute: typeof AuthenticatedWorkcentersRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedBatchesBatchIdRoute: typeof AuthenticatedBatchesBatchIdRouteWithChildren
@@ -429,6 +449,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedJournalRoute: AuthenticatedJournalRoute,
   AuthenticatedProductsRoute: AuthenticatedProductsRouteWithChildren,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedWarehouseRoute: AuthenticatedWarehouseRoute,
   AuthenticatedWorkcentersRoute: AuthenticatedWorkcentersRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedBatchesBatchIdRoute:
