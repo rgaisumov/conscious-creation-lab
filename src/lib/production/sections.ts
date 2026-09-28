@@ -3,6 +3,7 @@ export const SECTIONS = [
   { id: "products", title: "Изделия", url: "/products" },
   { id: "workcenters", title: "Участки", url: "/workcenters" },
   { id: "contracts", title: "Договоры", url: "/contracts" },
+  { id: "warehouse", title: "Склад", url: "/warehouse" },
   { id: "journal", title: "Журнал", url: "/journal" },
   { id: "settings", title: "Настройки", url: "/settings" },
 ] as const;

@@ -299,6 +299,95 @@ export type Database = {
         }
         Relationships: []
       }
+      stock_items: {
+        Row: {
+          available: number
+          created_at: string
+          id: string
+          name: string
+          note: string | null
+          unit: string
+        }
+        Insert: {
+          available?: number
+          created_at?: string
+          id?: string
+          name: string
+          note?: string | null
+          unit?: string
+        }
+        Update: {
+          available?: number
+          created_at?: string
+          id?: string
+          name?: string
+          note?: string | null
+          unit?: string
+        }
+        Relationships: []
+      }
+      stock_orders: {
+        Row: {
+          created_at: string
+          expected_date: string | null
+          id: string
+          item_name: string
+          quantity: number
+          received: boolean
+        }
+        Insert: {
+          created_at?: string
+          expected_date?: string | null
+          id?: string
+          item_name: string
+          quantity?: number
+          received?: boolean
+        }
+        Update: {
+          created_at?: string
+          expected_date?: string | null
+          id?: string
+          item_name?: string
+          quantity?: number
+          received?: boolean
+        }
+        Relationships: []
+      }
+      stock_reservations: {
+        Row: {
+          batch_id: string
+          created_at: string
+          id: string
+          item_name: string
+          required: number
+          reserved: number
+        }
+        Insert: {
+          batch_id: string
+          created_at?: string
+          id?: string
+          item_name: string
+          required?: number
+          reserved?: number
+        }
+        Update: {
+          batch_id?: string
+          created_at?: string
+          id?: string
+          item_name?: string
+          required?: number
+          reserved?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_reservations_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "batches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transfer_times: {
         Row: {
           created_at: string
