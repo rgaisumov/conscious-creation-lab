@@ -43,6 +43,7 @@ function ProductEditorLayout() {
   const tabs = [
     { label: "Тех.маршрут", to: base, exact: true },
     { label: "Граф", to: `${base}/graph`, exact: false },
+    { label: "Состав", to: `${base}/composition`, exact: false },
   ];
 
   return (
