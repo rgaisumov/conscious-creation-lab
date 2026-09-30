@@ -37,8 +37,12 @@ export interface Operation {
   outsourceOrg?: string;
   /** Оборот у подрядчика, календарные дни (для аутсорса). */
   outsourceDays?: number;
+  /** Этап производства (для сводки по договорам). */
+  stage?: string;
   note?: string;
 }
+
+export const STAGES = ["Платы","ЭРИ","Монтаж ЭРИ","Детали","Сборка","Проверка","Испытания","Отгрузка"] as const;
 
 /** Logical stage grouping several independent operations (OG001-OG003). */
 export interface OperationGroup {

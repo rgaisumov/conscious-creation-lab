@@ -2,7 +2,7 @@ import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Pencil, Plus, Trash2, X, Eye, Search } from "lucide-react";
 import { useProduction } from "@/lib/production/store";
-import type { Batch, Contract, ContractDelivery } from "@/lib/production/types";
+import { STAGES, type Batch, type Contract, type ContractDelivery } from "@/lib/production/types";
 
 export const Route = createFileRoute("/_authenticated/contracts")({
   head: () => ({
@@ -57,7 +57,20 @@ function ContractsPage() {
     removeDelivery,
     attachBatch,
     detachBatch,
+    effectiveProduct,
   } = useProduction();
+
+  const stageProgress = (d: ContractDelivery, linked: Batch[]) =>
+    STAGES.map((stage) => {
+      let done = 0, any = false;
+      for (const b of linked) {
+        const ops = effectiveProduct(b).operations.filter((o) => o.stage === stage);
+        if (!ops.length) continue;
+        any = true;
+        done += Math.min(...ops.map((o) => b.completed[o.id] ?? 0));
+      }
+      return { stage, any, done, late: any && done < d.quantity && d.date < today() };
+    }).filter((x) => x.any);
 
   const [editing, setEditing] = useState(false);
   const [query, setQuery] = useState("");
@@ -232,6 +245,20 @@ function ContractsPage() {
                                     );
                                   })
                                 )}
+                                {stageProgress(d, linked).map((sp) => (
+                                  <span
+                                    key={sp.stage}
+                                    className={`rounded px-1.5 py-0.5 text-[10px] ${
+                                      sp.late
+                                        ? "bg-destructive/15 text-destructive"
+                                        : sp.done >= d.quantity
+                                          ? "bg-muted text-muted-foreground"
+                                          : "border border-border text-foreground"
+                                    }`}
+                                  >
+                                    {sp.stage} {sp.done}/{d.quantity}
+                                  </span>
+                                ))}
                               </div>
                             );
                           })}

@@ -2,7 +2,7 @@ import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import { useProduction, type RouteTarget } from "@/lib/production/store";
 import * as R from "@/lib/production/route-ops";
 import { nodeOf, transferHours } from "@/lib/production/workload";
-import type { ComponentType, Operation } from "@/lib/production/types";
+import { STAGES, type ComponentType, type Operation } from "@/lib/production/types";
 
 export const TYPE_LABEL: Record<ComponentType, string> = {
   material: "Материал",
@@ -110,6 +110,21 @@ export function RouteEditor({ target }: { target: RouteTarget }) {
               </div>
 
               <div className="mt-3 flex flex-wrap items-center gap-2">
+                <label className="flex items-center gap-1 text-xs text-muted-foreground">
+                  Этап
+                  <select
+                    value={op.stage ?? ""}
+                    onChange={(e) =>
+                      mutateRoute(target, (r) => R.updateOperation(r, op.id, { stage: e.target.value || undefined }))
+                    }
+                    className="rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground"
+                  >
+                    <option value="">—</option>
+                    {STAGES.map((s) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </label>
                 <label className="flex items-center gap-1 text-xs text-muted-foreground">
                   Участок
                   <select
