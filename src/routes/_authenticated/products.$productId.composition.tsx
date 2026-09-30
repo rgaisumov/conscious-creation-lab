@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
 import { Plus, Trash2, Upload } from "lucide-react";
 import { useProduction } from "@/lib/production/store";
 import * as R from "@/lib/production/route-ops";
@@ -33,6 +34,45 @@ function CompositionPage() {
   const route = getRoute(target);
   if (!route) return null;
   const groups = route.components.filter((c) => c.type !== "semi-product");
+
+  const [menuType, setMenuType] = useState<ComponentType | null>(null);
+  const [query, setQuery] = useState("");
+
+  /** Ранее добавленные компоненты того же типа из всех изделий, которых ещё нет в этом изделии. */
+  const suggestions = useMemo(() => {
+    if (!menuType) return [];
+    const existing = new Set(
+      groups.filter((g) => g.type === menuType).map((g) => g.name.trim().toLowerCase()),
+    );
+    const byName = new Map<string, ComponentGroup>();
+    for (const p of products) {
+      for (const c of p.components) {
+        if (c.type !== menuType) continue;
+        const key = c.name.trim().toLowerCase();
+        if (!key || existing.has(key) || byName.has(key)) continue;
+        byName.set(key, c);
+      }
+    }
+    const q = query.trim().toLowerCase();
+    return [...byName.values()]
+      .filter((c) => !q || c.name.toLowerCase().includes(q))
+      .sort((a, b) => a.name.localeCompare(b.name, "ru"));
+  }, [menuType, products, groups, query]);
+
+  const addExisting = (c: ComponentGroup) => {
+    mutateRoute(target, (r) => ({
+      ...r,
+      components: [...r.components, JSON.parse(JSON.stringify({ ...c, id: uid() })) as ComponentGroup],
+    }));
+    setMenuType(null);
+    setQuery("");
+  };
+
+  const addNewGroup = (t: ComponentType) => {
+    mutateRoute(target, (r) => R.addComponent(r, t));
+    setMenuType(null);
+    setQuery("");
+  };
 
   const setPositions = (g: ComponentGroup, positions: Position[]) =>
     mutateRoute(target, (r) => R.updateComponent(r, g.id, { positions }));
