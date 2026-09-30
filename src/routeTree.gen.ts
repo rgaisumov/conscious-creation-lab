@@ -25,6 +25,7 @@ import { Route as AuthenticatedBatchesBatchIdRouteImport } from './routes/_authe
 import { Route as AuthenticatedProductsProductIdIndexRouteImport } from './routes/_authenticated/products.$productId.index'
 import { Route as AuthenticatedBatchesBatchIdIndexRouteImport } from './routes/_authenticated/batches.$batchId.index'
 import { Route as AuthenticatedProductsProductIdGraphRouteImport } from './routes/_authenticated/products.$productId.graph'
+import { Route as AuthenticatedProductsProductIdCompositionRouteImport } from './routes/_authenticated/products.$productId.composition'
 import { Route as AuthenticatedBatchesBatchIdGraphRouteImport } from './routes/_authenticated/batches.$batchId.graph'
 import { Route as AuthenticatedBatchesBatchIdComponentsRouteImport } from './routes/_authenticated/batches.$batchId.components'
 
@@ -114,6 +115,12 @@ const AuthenticatedProductsProductIdGraphRoute =
     path: '/graph',
     getParentRoute: () => AuthenticatedProductsProductIdRoute,
   } as any)
+const AuthenticatedProductsProductIdCompositionRoute =
+  AuthenticatedProductsProductIdCompositionRouteImport.update({
+    id: '/composition',
+    path: '/composition',
+    getParentRoute: () => AuthenticatedProductsProductIdRoute,
+  } as any)
 const AuthenticatedBatchesBatchIdGraphRoute =
   AuthenticatedBatchesBatchIdGraphRouteImport.update({
     id: '/graph',
@@ -142,6 +149,7 @@ export interface FileRoutesByFullPath {
   '/products/': typeof AuthenticatedProductsIndexRoute
   '/batches/$batchId/components': typeof AuthenticatedBatchesBatchIdComponentsRoute
   '/batches/$batchId/graph': typeof AuthenticatedBatchesBatchIdGraphRoute
+  '/products/$productId/composition': typeof AuthenticatedProductsProductIdCompositionRoute
   '/products/$productId/graph': typeof AuthenticatedProductsProductIdGraphRoute
   '/batches/$batchId/': typeof AuthenticatedBatchesBatchIdIndexRoute
   '/products/$productId/': typeof AuthenticatedProductsProductIdIndexRoute
@@ -158,6 +166,7 @@ export interface FileRoutesByTo {
   '/products': typeof AuthenticatedProductsIndexRoute
   '/batches/$batchId/components': typeof AuthenticatedBatchesBatchIdComponentsRoute
   '/batches/$batchId/graph': typeof AuthenticatedBatchesBatchIdGraphRoute
+  '/products/$productId/composition': typeof AuthenticatedProductsProductIdCompositionRoute
   '/products/$productId/graph': typeof AuthenticatedProductsProductIdGraphRoute
   '/batches/$batchId': typeof AuthenticatedBatchesBatchIdIndexRoute
   '/products/$productId': typeof AuthenticatedProductsProductIdIndexRoute
@@ -179,6 +188,7 @@ export interface FileRoutesById {
   '/_authenticated/products/': typeof AuthenticatedProductsIndexRoute
   '/_authenticated/batches/$batchId/components': typeof AuthenticatedBatchesBatchIdComponentsRoute
   '/_authenticated/batches/$batchId/graph': typeof AuthenticatedBatchesBatchIdGraphRoute
+  '/_authenticated/products/$productId/composition': typeof AuthenticatedProductsProductIdCompositionRoute
   '/_authenticated/products/$productId/graph': typeof AuthenticatedProductsProductIdGraphRoute
   '/_authenticated/batches/$batchId/': typeof AuthenticatedBatchesBatchIdIndexRoute
   '/_authenticated/products/$productId/': typeof AuthenticatedProductsProductIdIndexRoute
@@ -200,6 +210,7 @@ export interface FileRouteTypes {
     | '/products/'
     | '/batches/$batchId/components'
     | '/batches/$batchId/graph'
+    | '/products/$productId/composition'
     | '/products/$productId/graph'
     | '/batches/$batchId/'
     | '/products/$productId/'
@@ -216,6 +227,7 @@ export interface FileRouteTypes {
     | '/products'
     | '/batches/$batchId/components'
     | '/batches/$batchId/graph'
+    | '/products/$productId/composition'
     | '/products/$productId/graph'
     | '/batches/$batchId'
     | '/products/$productId'
@@ -236,6 +248,7 @@ export interface FileRouteTypes {
     | '/_authenticated/products/'
     | '/_authenticated/batches/$batchId/components'
     | '/_authenticated/batches/$batchId/graph'
+    | '/_authenticated/products/$productId/composition'
     | '/_authenticated/products/$productId/graph'
     | '/_authenticated/batches/$batchId/'
     | '/_authenticated/products/$productId/'
@@ -361,6 +374,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProductsProductIdGraphRouteImport
       parentRoute: typeof AuthenticatedProductsProductIdRoute
     }
+    '/_authenticated/products/$productId/composition': {
+      id: '/_authenticated/products/$productId/composition'
+      path: '/composition'
+      fullPath: '/products/$productId/composition'
+      preLoaderRoute: typeof AuthenticatedProductsProductIdCompositionRouteImport
+      parentRoute: typeof AuthenticatedProductsProductIdRoute
+    }
     '/_authenticated/batches/$batchId/graph': {
       id: '/_authenticated/batches/$batchId/graph'
       path: '/graph'
@@ -379,12 +399,15 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedProductsProductIdRouteChildren {
+  AuthenticatedProductsProductIdCompositionRoute: typeof AuthenticatedProductsProductIdCompositionRoute
   AuthenticatedProductsProductIdGraphRoute: typeof AuthenticatedProductsProductIdGraphRoute
   AuthenticatedProductsProductIdIndexRoute: typeof AuthenticatedProductsProductIdIndexRoute
 }
 
 const AuthenticatedProductsProductIdRouteChildren: AuthenticatedProductsProductIdRouteChildren =
   {
+    AuthenticatedProductsProductIdCompositionRoute:
+      AuthenticatedProductsProductIdCompositionRoute,
     AuthenticatedProductsProductIdGraphRoute:
       AuthenticatedProductsProductIdGraphRoute,
     AuthenticatedProductsProductIdIndexRoute:
