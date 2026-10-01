@@ -30,7 +30,7 @@ const TYPE_BY_TEXT: Record<string, ComponentType> = {
 function CompositionPage() {
   const { productId } = Route.useParams();
   const target = { kind: "product", productId } as const;
-  const { getRoute, mutateRoute } = useProduction();
+  const { products, getRoute, mutateRoute } = useProduction();
   const route = getRoute(target);
   if (!route) return null;
   const groups = route.components.filter((c) => c.type !== "semi-product");
