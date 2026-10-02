@@ -12,6 +12,10 @@ export const Route = createFileRoute("/_authenticated/batches/$batchId/component
 });
 
 const TYPE_LABEL: Record<ComponentType, string> = {
+  detail: "Деталь",
+  assembly: "Сборочная единица",
+  standard: "Стандартное изделие",
+  packaging: "Упаковка",
   material: "Материалы",
   eri: "ЭРИ",
   fixture: "Оснастка",

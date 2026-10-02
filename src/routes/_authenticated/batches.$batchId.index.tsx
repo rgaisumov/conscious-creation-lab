@@ -255,7 +255,6 @@ function OperationRow({
           <div className={`text-sm font-medium ${highlight ? "text-card-foreground" : "text-card-foreground"}`}>
             {name}
           </div>
-          <div className="mt-1.5 text-xs text-muted-foreground">{responsible}</div>
           {place && (
             <div
               className={`mt-1 inline-block rounded border px-1.5 py-0.5 text-[11px] ${

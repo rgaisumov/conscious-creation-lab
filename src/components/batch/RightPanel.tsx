@@ -34,7 +34,6 @@ export function RightPanel() {
         <p className="mt-2 text-xs text-muted-foreground">{oc.reason}</p>
 
         <dl className="mt-4 space-y-1.5 text-xs">
-          <Row label="Ответственный" value={op.responsible} />
           <Row label="Длительность" value={`${op.durationHours} ч`} />
           <Row label="Выполнено" value={`${oc.completed}/${summary.batchSize}`} />
           <Row label="Можно сейчас" value={`${oc.canPerformNow} шт`} />

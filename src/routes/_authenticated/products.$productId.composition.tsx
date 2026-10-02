@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { Plus, Trash2, Upload } from "lucide-react";
 import { useProduction } from "@/lib/production/store";
 import * as R from "@/lib/production/route-ops";
-import type { ComponentGroup, ComponentType, Position } from "@/lib/production/types";
+import { COMPOSITION_TYPES, type ComponentGroup, type ComponentType, type Position } from "@/lib/production/types";
 import { TYPE_LABEL } from "@/components/route/RouteEditor";
 
 export const Route = createFileRoute("/_authenticated/products/$productId/composition")({
@@ -25,6 +25,8 @@ const inp = "rounded-md border border-border bg-background px-2 py-1 text-xs tex
 
 const TYPE_BY_TEXT: Record<string, ComponentType> = {
   материал: "material", материалы: "material", эри: "eri", оснастка: "fixture",
+  деталь: "detail", детали: "detail", "сборочная единица": "assembly", "сборочные единицы": "assembly", се: "assembly",
+  "стандартное изделие": "standard", "стандартные изделия": "standard", упаковка: "packaging",
 };
 
 function CompositionPage() {
@@ -131,7 +133,7 @@ function CompositionPage() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
-        {(["material", "eri", "fixture"] as ComponentType[]).map((t) => (
+        {COMPOSITION_TYPES.map((t) => (
           <div key={t} className="relative">
             <button type="button" onClick={() => { setMenuType(menuType === t ? null : t); setQuery(""); }}
               className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs text-muted-foreground hover:border-primary hover:text-primary">
@@ -182,7 +184,7 @@ function CompositionPage() {
         </label>
       </div>
       <p className="text-[11px] text-muted-foreground">
-        Колонки Excel: Группа, Тип (Материал / ЭРИ / Оснастка), Наименование, Кол-во на изделие, Поставщик, Срок поставки (дн).
+        Колонки Excel: Группа, Тип (Деталь / Сборочная единица / Стандартное изделие / Материал / ЭРИ / Упаковка / Оснастка), Наименование, Кол-во на изделие, Поставщик, Срок поставки (дн).
       </p>
 
       {groups.length === 0 && <p className="text-sm text-muted-foreground">Состав пока пуст.</p>}

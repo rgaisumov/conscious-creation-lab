@@ -1,4 +1,8 @@
-export type ComponentType = "material" | "eri" | "fixture" | "semi-product";
+export type ComponentType =
+  | "material" | "eri" | "fixture" | "detail" | "assembly" | "standard" | "packaging" | "semi-product";
+
+/** Закупаемые / комплектующие категории состава изделия. */
+export const COMPOSITION_TYPES: ComponentType[] = ["detail", "assembly", "standard", "material", "eri", "packaging", "fixture"];
 
 export interface Position {
   id: string;
