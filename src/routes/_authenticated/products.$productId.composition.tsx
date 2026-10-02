@@ -59,6 +59,22 @@ function CompositionPage() {
       .sort((a, b) => a.name.localeCompare(b.name, "ru"));
   }, [menuType, products, groups, query]);
 
+  /** Где уже используется компонент: ключ "тип|имя" -> список изделий. */
+  const usageByComponent = useMemo(() => {
+    const map = new Map<string, string[]>();
+    for (const p of products) {
+      for (const c of p.components) {
+        const name = c.name.trim();
+        if (c.type === "semi-product" || !name) continue;
+        const key = `${c.type}|${name.toLowerCase()}`;
+        const arr = map.get(key) ?? [];
+        if (!arr.includes(p.name)) arr.push(p.name);
+        map.set(key, arr);
+      }
+    }
+    return map;
+  }, [products]);
+
   const addExisting = (c: ComponentGroup) => {
     mutateRoute(target, (r) => ({
       ...r,
@@ -131,17 +147,29 @@ function CompositionPage() {
                     {suggestions.length === 0 && (
                       <p className="px-2 py-1 text-[11px] text-muted-foreground">Нет ранее добавленных компонентов</p>
                     )}
-                    {suggestions.map((c) => (
-                      <button key={c.id} type="button" onClick={() => addExisting(c)}
-                        className="block w-full rounded px-2 py-1 text-left text-xs hover:bg-accent">
-                        {c.name} <span className="text-muted-foreground">· {c.positions.length} поз.</span>
-                      </button>
-                    ))}
+                    {suggestions.map((c) => {
+                      const usage = usageByComponent.get(`${c.type}|${c.name.trim().toLowerCase()}`) ?? [];
+                      return (
+                        <button key={c.id} type="button" onClick={() => addExisting(c)}
+                          className="block w-full rounded px-2 py-1 text-left text-xs hover:bg-accent">
+                          <span>{c.name} <span className="text-muted-foreground">· {c.positions.length} поз.</span></span>
+                          {usage.length > 0 && (
+                            <span className="block text-[10px] text-muted-foreground"
+                              title={`Уже используется в изделиях: ${usage.join(", ")}`}>
+                              Используется в: {usage.join(", ")}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
                   <button type="button" onClick={() => addNewGroup(t)}
                     className="mt-2 w-full rounded border-t border-border px-2 pt-2 text-left text-xs text-primary hover:underline">
                     + Создать новый
                   </button>
+                  <p className="mt-1 px-2 text-[10px] leading-snug text-muted-foreground">
+                    Компоненты копируются, а не ссылаются: изменение позиций в одном изделии не меняет их в других.
+                  </p>
                 </div>
               </>
             )}
@@ -163,6 +191,16 @@ function CompositionPage() {
           <div className="flex items-center gap-2">
             <input value={g.name} className={`${inp} flex-1 font-medium`}
               onChange={(e) => mutateRoute(target, (r) => R.updateComponent(r, g.id, { name: e.target.value }))} />
+            {(() => {
+              const usage = usageByComponent.get(`${g.type}|${g.name.trim().toLowerCase()}`) ?? [];
+              if (usage.length === 0) return null;
+              return (
+                <span className="max-w-48 truncate text-[11px] text-muted-foreground"
+                  title={`Используется в изделиях: ${usage.join(", ")}`}>
+                  Используется в: {usage.join(", ")}
+                </span>
+              );
+            })()}
             <span className="text-[11px] text-muted-foreground">{TYPE_LABEL[g.type]}</span>
             <button type="button" aria-label="Удалить группу" onClick={() => mutateRoute(target, (r) => R.removeComponent(r, g.id))}
               className="p-1 text-muted-foreground hover:text-status-block"><Trash2 className="h-3.5 w-3.5" /></button>
