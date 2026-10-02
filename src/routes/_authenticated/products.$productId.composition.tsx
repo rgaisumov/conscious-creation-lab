@@ -116,10 +116,36 @@ function CompositionPage() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
         {(["material", "eri", "fixture"] as ComponentType[]).map((t) => (
-          <button key={t} type="button" onClick={() => mutateRoute(target, (r) => R.addComponent(r, t))}
-            className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs text-muted-foreground hover:border-primary hover:text-primary">
-            <Plus className="h-3 w-3" /> {TYPE_LABEL[t]}
-          </button>
+          <div key={t} className="relative">
+            <button type="button" onClick={() => { setMenuType(menuType === t ? null : t); setQuery(""); }}
+              className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs text-muted-foreground hover:border-primary hover:text-primary">
+              <Plus className="h-3 w-3" /> {TYPE_LABEL[t]}
+            </button>
+            {menuType === t && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setMenuType(null)} />
+                <div className="absolute left-0 top-full z-20 mt-1 w-72 rounded-md border border-border bg-popover p-2 text-popover-foreground shadow-lg">
+                  <input autoFocus value={query} onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Поиск ранее добавленных…" className={`${inp} w-full`} />
+                  <div className="mt-2 max-h-60 overflow-auto">
+                    {suggestions.length === 0 && (
+                      <p className="px-2 py-1 text-[11px] text-muted-foreground">Нет ранее добавленных компонентов</p>
+                    )}
+                    {suggestions.map((c) => (
+                      <button key={c.id} type="button" onClick={() => addExisting(c)}
+                        className="block w-full rounded px-2 py-1 text-left text-xs hover:bg-accent">
+                        {c.name} <span className="text-muted-foreground">· {c.positions.length} поз.</span>
+                      </button>
+                    ))}
+                  </div>
+                  <button type="button" onClick={() => addNewGroup(t)}
+                    className="mt-2 w-full rounded border-t border-border px-2 pt-2 text-left text-xs text-primary hover:underline">
+                    + Создать новый
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         ))}
         <label className="ml-auto inline-flex cursor-pointer items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground">
           <Upload className="h-3.5 w-3.5" /> Загрузить из Excel
