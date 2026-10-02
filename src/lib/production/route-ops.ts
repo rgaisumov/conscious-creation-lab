@@ -139,6 +139,10 @@ export function addComponent(route: RouteDraft, type: ComponentType): RouteDraft
     material: "Новый материал",
     eri: "Новое ЭРИ",
     fixture: "Новая оснастка",
+    detail: "Новая деталь",
+    assembly: "Новая сборочная единица",
+    standard: "Новое стандартное изделие",
+    packaging: "Новая упаковка",
     "semi-product": "Новый полуфабрикат",
   };
   const c: ComponentGroup = {

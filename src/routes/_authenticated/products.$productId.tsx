@@ -44,6 +44,7 @@ function ProductEditorLayout() {
     { label: "Тех.маршрут", to: base, exact: true },
     { label: "Граф", to: `${base}/graph`, exact: false },
     { label: "Состав", to: `${base}/composition`, exact: false },
+    { label: "Партии", to: `${base}/batches`, exact: false },
   ];
 
   return (

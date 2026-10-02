@@ -22,7 +22,7 @@ export const Route = createFileRoute("/_authenticated/products/")({
 });
 
 function ProductsPage() {
-  const { products, batches, addProduct, summaryOf } = useProduction();
+  const { products, batches, addProduct } = useProduction();
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [withBatches, setWithBatches] = useState(false);
@@ -53,7 +53,7 @@ function ProductsPage() {
           type="button"
           onClick={() => {
             const id = addProduct();
-            navigate({ to: "/products", hash: id });
+            navigate({ to: "/products/$productId", params: { productId: id } });
           }}
           className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
         >
@@ -84,54 +84,36 @@ function ProductsPage() {
             Изделия не найдены.
           </div>
         )}
-        {visible.map((p) => {
-          const own = batches.filter((b) => b.productId === p.id);
-          return (
-            <section key={p.id} id={p.id} className="rounded-lg border border-border bg-card p-4">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <h2 className="text-sm font-semibold text-card-foreground">
-                    {p.name} <span className="text-muted-foreground font-normal">· {p.version}</span>
-                  </h2>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {p.operations.length} операций · {p.components.length} групп компонентов
-                    {p.note ? ` · ${p.note}` : ""}
-                  </p>
-                </div>
-                <Link
-                  to="/products/$productId"
-                  params={{ productId: p.id }}
-                  className="rounded-md border border-border px-2.5 py-1.5 text-xs text-muted-foreground hover:border-primary hover:text-primary"
-                >
-                  Редактировать тех.маршрут / граф
-                </Link>
-              </div>
-
-
-              <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-                {own.map((b) => {
-                  const s = summaryOf(b);
-                  return (
-                    <Link
-                      key={b.id}
-                      to="/batches/$batchId"
-                      params={{ batchId: b.id }}
-                      className="rounded-md border border-border bg-background p-3 text-xs transition-colors hover:border-primary/50"
-                    >
-                      <div className="font-medium text-foreground">Партия {b.number}</div>
-                      <div className="mt-1 text-muted-foreground">
-                        {b.orderedQty} шт · отгружено {s.shipped} · {s.primaryBlockingReason}
-                      </div>
-                    </Link>
-                  );
-                })}
-                {own.length === 0 && (
-                  <div className="text-xs text-muted-foreground">Партий пока нет</div>
-                )}
-              </div>
-            </section>
-          );
-        })}
+        {visible.length > 0 && (
+          <div className="overflow-hidden rounded-lg border border-border">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/40 text-[11px] uppercase tracking-wide text-muted-foreground">
+                <tr>
+                  <th className="px-3 py-2 text-left font-medium">Изделие</th>
+                  <th className="px-3 py-2 text-left font-medium">Версия</th>
+                  <th className="px-3 py-2 text-right font-medium">Операций</th>
+                  <th className="px-3 py-2 text-right font-medium">Групп состава</th>
+                  <th className="px-3 py-2 text-left font-medium">Примечание</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visible.map((p) => (
+                  <tr key={p.id} id={p.id} className="border-t border-border hover:bg-accent/40">
+                    <td className="px-3 py-2">
+                      <Link to="/products/$productId" params={{ productId: p.id }} className="font-medium text-primary hover:underline">
+                        {p.name}
+                      </Link>
+                    </td>
+                    <td className="px-3 py-2 text-xs text-muted-foreground">{p.version}</td>
+                    <td className="px-3 py-2 text-right text-xs tabular-nums">{p.operations.length}</td>
+                    <td className="px-3 py-2 text-right text-xs tabular-nums">{p.components.filter((c) => c.type !== "semi-product").length}</td>
+                    <td className="px-3 py-2 text-xs text-muted-foreground">{p.note ?? ""}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

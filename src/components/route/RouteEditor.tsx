@@ -2,9 +2,13 @@ import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import { useProduction, type RouteTarget } from "@/lib/production/store";
 import * as R from "@/lib/production/route-ops";
 import { nodeOf, transferHours } from "@/lib/production/workload";
-import { STAGES, type ComponentType, type Operation } from "@/lib/production/types";
+import { COMPOSITION_TYPES, STAGES, type ComponentType, type Operation } from "@/lib/production/types";
 
 export const TYPE_LABEL: Record<ComponentType, string> = {
+  detail: "Деталь",
+  assembly: "Сборочная единица",
+  standard: "Стандартное изделие",
+  packaging: "Упаковка",
   material: "Материал",
   eri: "ЭРИ",
   fixture: "Оснастка",
@@ -60,14 +64,6 @@ export function RouteEditor({ target }: { target: RouteTarget }) {
                   value={op.name}
                   onChange={(e) => mutateRoute(target, (r) => R.updateOperation(r, op.id, { name: e.target.value }))}
                   className="min-w-40 flex-1 rounded-md border border-border bg-background px-2 py-1 text-sm text-foreground"
-                />
-                <input
-                  value={op.responsible}
-                  onChange={(e) =>
-                    mutateRoute(target, (r) => R.updateOperation(r, op.id, { responsible: e.target.value }))
-                  }
-                  placeholder="Ответственный"
-                  className="w-40 rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground"
                 />
                 <label className="flex items-center gap-1 text-xs text-muted-foreground">
                   ч
@@ -259,7 +255,7 @@ export function ComponentsEditor({ target }: { target: RouteTarget }) {
         <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
           Компоненты изделия
         </span>
-        {(["material", "eri", "fixture"] as ComponentType[]).map((t) => (
+        {COMPOSITION_TYPES.map((t) => (
           <button
             key={t}
             type="button"
