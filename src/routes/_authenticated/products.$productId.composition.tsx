@@ -194,7 +194,8 @@ function CompositionPage() {
             <input value={g.name} className={`${inp} flex-1 font-medium`}
               onChange={(e) => mutateRoute(target, (r) => R.updateComponent(r, g.id, { name: e.target.value }))} />
             {(() => {
-              const usage = usageByComponent.get(`${g.type}|${g.name.trim().toLowerCase()}`) ?? [];
+              const self = products.find((p) => p.id === productId)?.name;
+              const usage = (usageByComponent.get(`${g.type}|${g.name.trim().toLowerCase()}`) ?? []).filter((n) => n !== self);
               if (usage.length === 0) return null;
               return (
                 <span className="max-w-48 truncate text-[11px] text-muted-foreground"
