@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Plus, Trash2, Upload } from "lucide-react";
+import { Info, Plus, Trash2, Upload } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useProduction } from "@/lib/production/store";
 import * as R from "@/lib/production/route-ops";
 import { COMPOSITION_TYPES, type ComponentGroup, type ComponentType, type Position } from "@/lib/production/types";
@@ -39,6 +40,7 @@ function CompositionPage() {
 
   const [menuType, setMenuType] = useState<ComponentType | null>(null);
   const [query, setQuery] = useState("");
+  const [showImportInfo, setShowImportInfo] = useState(false);
 
   /** Ранее добавленные компоненты того же типа из всех изделий, которых ещё нет в этом изделии. */
   const suggestions = useMemo(() => {
@@ -182,10 +184,25 @@ function CompositionPage() {
           <input type="file" accept=".xlsx,.xls,.csv" className="hidden"
             onChange={(e) => { const f = e.target.files?.[0]; if (f) importExcel(f); e.target.value = ""; }} />
         </label>
+        <Button type="button" size="icon" variant="ghost" className="h-7 w-7" aria-label="Формат файла Excel" title="Формат файла Excel" onClick={() => setShowImportInfo(true)}><Info className="h-4 w-4" /></Button>
       </div>
-      <p className="text-[11px] text-muted-foreground">
-        Колонки Excel: Группа, Тип (Деталь / Сборочная единица / Стандартное изделие / Материал / ЭРИ / Упаковка / Оснастка), Наименование, Кол-во на изделие, Поставщик, Срок поставки (дн).
-      </p>
+
+      {showImportInfo && <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/70 p-4" onClick={() => setShowImportInfo(false)}>
+        <div role="dialog" aria-modal="true" aria-label="Формат файла Excel" className="w-full max-w-lg space-y-3 rounded-md border border-border bg-card p-5 shadow-lg" onClick={(e) => e.stopPropagation()}>
+          <h2 className="text-lg font-semibold">Формат файла Excel</h2>
+          <p className="text-sm">Первая строка первого листа — заголовки столбцов. Каждая следующая строка — отдельная позиция. Поддерживаются .xlsx, .xls и .csv.</p>
+          <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr className="border-b border-border"><th className="py-1">Столбец</th><th>Что указать</th></tr></thead><tbody>
+            <tr><td className="py-1 pr-3">Наименование</td><td>Название позиции; обязательно</td></tr>
+            <tr><td className="py-1 pr-3">Группа</td><td>Название группы; без него — «Импорт»</td></tr>
+            <tr><td className="py-1 pr-3">Тип</td><td>Деталь, Сборочная единица, Стандартное изделие, Материал, ЭРИ, Упаковка или Оснастка; без него — Материал</td></tr>
+            <tr><td className="py-1 pr-3">Кол-во на изделие</td><td>Число; без него — 1</td></tr>
+            <tr><td className="py-1 pr-3">Поставщик</td><td>Необязательно</td></tr>
+            <tr><td className="py-1 pr-3">Срок поставки (дн)</td><td>Число дней; без него — 0</td></tr>
+          </tbody></table></div>
+          <p className="text-xs text-muted-foreground">Пример: Конденсаторы · ЭРИ · К10-17 · 4 · Поставщик А · 14. Позиции добавляются к текущему составу, существующие не удаляются.</p>
+          <div className="flex justify-end"><Button type="button" size="sm" onClick={() => setShowImportInfo(false)}>Закрыть</Button></div>
+        </div>
+      </div>}
 
       {groups.length === 0 && <p className="text-sm text-muted-foreground">Состав пока пуст.</p>}
       {groups.map((g) => (
@@ -204,7 +221,10 @@ function CompositionPage() {
                 </span>
               );
             })()}
-            <span className="text-[11px] text-muted-foreground">{TYPE_LABEL[g.type]}</span>
+            <select aria-label={`Тип группы ${g.name}`} className={inp} value={g.type}
+              onChange={(e) => mutateRoute(target, (r) => R.updateComponent(r, g.id, { type: e.target.value as ComponentType }))}>
+              {COMPOSITION_TYPES.map((t) => <option key={t} value={t}>{TYPE_LABEL[t]}</option>)}
+            </select>
             <button type="button" aria-label="Удалить группу" onClick={() => mutateRoute(target, (r) => R.removeComponent(r, g.id))}
               className="p-1 text-muted-foreground hover:text-status-block"><Trash2 className="h-3.5 w-3.5" /></button>
           </div>
