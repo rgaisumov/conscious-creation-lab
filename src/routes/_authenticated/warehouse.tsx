@@ -4,6 +4,8 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useProduction } from "@/lib/production/store";
 import type { Batch, Product } from "@/lib/production/types";
+import { Button } from "@/components/ui/button";
+import { ArrowDown, ArrowUp, Plus } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/warehouse")({
   head: () => ({
@@ -19,7 +21,8 @@ export const Route = createFileRoute("/_authenticated/warehouse")({
   component: WarehousePage,
 });
 
-type Item = { id: string; name: string; unit: string; available: number; note: string | null };
+type Item = { id: string; name: string; unit: string; available: number; note: string | null; group_id: string | null };
+type StockGroup = { id: string; name: string };
 type Res = { id: string; batch_id: string; item_name: string; required: number; reserved: number; created_at: string };
 type Order = { id: string; item_name: string; quantity: number; expected_date: string | null; received: boolean };
 type Tab = "available" | "used" | "deficit" | "ordered";
@@ -54,17 +57,25 @@ function WarehousePage() {
   const [items, setItems] = useState<Item[]>([]);
   const [res, setRes] = useState<Res[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [groups, setGroups] = useState<StockGroup[]>([]);
+  const [groupName, setGroupName] = useState("");
+  const [search, setSearch] = useState("");
+  const [groupFilter, setGroupFilter] = useState("all");
+  const [sort, setSort] = useState<{ key: string; desc: boolean }>({ key: "name", desc: false });
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
-    const [a, b, c] = await Promise.all([
+    const [a, b, c, d] = await Promise.all([
       supabase.from("stock_items").select("*").order("name"),
       supabase.from("stock_reservations").select("*").order("created_at"),
       supabase.from("stock_orders").select("*").order("created_at"),
+      supabase.from("stock_groups").select("id,name").order("name"),
     ]);
     setItems((a.data ?? []) as Item[]);
     setRes((b.data ?? []) as Res[]);
     setOrders((c.data ?? []) as Order[]);
+    if (d.error) toast.error(d.error.message);
+    setGroups((d.data ?? []) as StockGroup[]);
   }, []);
   useEffect(() => { void load(); }, [load]);
 
@@ -113,12 +124,19 @@ function WarehousePage() {
   }, "Резерв снят");
 
   // ---- Доступные ----
-  const [newItem, setNewItem] = useState({ name: "", unit: "шт", available: "" });
+  const [newItem, setNewItem] = useState({ name: "", unit: "шт", available: "", group_id: "" });
+  const addGroup = () => run(async () => {
+    const name = groupName.trim();
+    if (!name) throw new Error("Укажите название группы");
+    chk(await supabase.from("stock_groups").insert({ name }));
+    await log("Добавлена группа компонентов", name);
+    setGroupName("");
+  }, "Группа добавлена");
   const addItem = () => run(async () => {
     if (!newItem.name.trim()) throw new Error("Укажите наименование");
-    chk(await supabase.from("stock_items").insert({ name: newItem.name.trim(), unit: newItem.unit || "шт", available: Number(newItem.available) || 0 }));
+    chk(await supabase.from("stock_items").insert({ name: newItem.name.trim(), unit: newItem.unit || "шт", available: Number(newItem.available) || 0, group_id: newItem.group_id || null }));
     await log(`Добавлена позиция: ${Number(newItem.available) || 0} ${newItem.unit}`, newItem.name.trim());
-    setNewItem({ name: "", unit: "шт", available: "" });
+    setNewItem({ name: "", unit: "шт", available: "", group_id: "" });
   }, "Позиция добавлена");
   const setQty = (it: Item, v: number) => run(async () => {
     chk(await supabase.from("stock_items").update({ available: v }).eq("id", it.id));
@@ -128,6 +146,23 @@ function WarehousePage() {
     chk(await supabase.from("stock_items").delete().eq("id", it.id));
     await log("Позиция удалена", it.name);
   });
+  const setGroup = (it: Item, groupId: string | null) => run(async () => {
+    chk(await supabase.from("stock_items").update({ group_id: groupId }).eq("id", it.id));
+    await log("Изменена группа компонентов", it.name);
+  });
+  const visibleItems = useMemo(() => items.filter((it) =>
+    it.name.toLocaleLowerCase("ru").includes(search.trim().toLocaleLowerCase("ru")) &&
+    (groupFilter === "all" || (groupFilter === "none" ? !it.group_id : it.group_id === groupFilter))
+  ).sort((a, b) => {
+    const value = (it: Item) => sort.key === "name" ? it.name : sort.key === "available" ? Number(it.available) : sort.key === "unit" ? it.unit : sort.key === "note" ? (it.note ?? "") : Number(it.group_id === sort.key);
+    const x = value(a), y = value(b);
+    const diff = typeof x === "number" && typeof y === "number" ? x - y : String(x).localeCompare(String(y), "ru", { numeric: true });
+    return (sort.desc ? -1 : 1) * (diff || a.name.localeCompare(b.name, "ru"));
+  }), [items, search, groupFilter, sort]);
+  const sortBy = (key: string) => setSort((s) => ({ key, desc: s.key === key ? !s.desc : false }));
+  const header = (key: string, label: string) => <Button type="button" variant="ghost" size="sm" className="h-8 px-1 text-muted-foreground" onClick={() => sortBy(key)} title={`Сортировать: ${label}`}>
+    {label}{sort.key === key && (sort.desc ? <ArrowDown className="h-3 w-3" /> : <ArrowUp className="h-3 w-3" />)}
+  </Button>;
 
   // ---- Дефицит ----
   const deficit = useMemo(() => {
@@ -210,28 +245,42 @@ function WarehousePage() {
 
       {tab === "available" && (
         <div className="space-y-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <input aria-label="Поиск компонентов" className={`${inp} min-w-48 flex-1`} placeholder="Поиск по наименованию" value={search} onChange={(e) => setSearch(e.target.value)} />
+            <select aria-label="Фильтр по группе" className={inp} value={groupFilter} onChange={(e) => setGroupFilter(e.target.value)}>
+              <option value="all">Все группы</option><option value="none">Без группы</option>
+              {groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
+            </select>
+            {canEdit && <><input aria-label="Новая группа компонентов" className={inp} placeholder="Новая группа" value={groupName} onChange={(e) => setGroupName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") void addGroup(); }} />
+              <Button type="button" size="sm" variant="outline" disabled={busy || !groupName.trim()} onClick={addGroup}><Plus className="h-4 w-4" /> Группа</Button></>}
+          </div>
           {canEdit && (
             <div className="flex flex-wrap gap-2">
               <input className={`${inp} w-72`} placeholder="Наименование (как в составе изделия)" value={newItem.name} onChange={(e) => setNewItem({ ...newItem, name: e.target.value })} />
               <input className={`${inp} w-24`} placeholder="Кол-во" type="number" value={newItem.available} onChange={(e) => setNewItem({ ...newItem, available: e.target.value })} />
               <input className={`${inp} w-20`} placeholder="Ед." value={newItem.unit} onChange={(e) => setNewItem({ ...newItem, unit: e.target.value })} />
-              <button className={btnP} disabled={busy} onClick={addItem}>Добавить</button>
+              <select aria-label="Группа нового компонента" className={inp} value={newItem.group_id} onChange={(e) => setNewItem({ ...newItem, group_id: e.target.value })}>
+                <option value="">Без группы</option>{groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
+              </select>
+              <Button size="sm" disabled={busy} onClick={addItem}>Добавить</Button>
             </div>
           )}
-          <table className="w-full text-sm">
-            <thead className="text-left text-muted-foreground"><tr><th className="py-2">Наименование</th><th>Свободно</th><th>Ед.</th><th></th></tr></thead>
+          <div className="overflow-x-auto"><table className="w-full min-w-max text-sm">
+            <thead className="text-left text-muted-foreground"><tr><th className="py-2 pr-4">{header("name", "Наименование")}</th>{groups.map((g) => <th key={g.id} className="pr-3">{header(g.id, g.name)}</th>)}<th className="pr-4">{header("available", "Свободно")}</th><th className="pr-4">{header("unit", "Ед.")}</th><th className="pr-4">{header("note", "Примечание")}</th><th></th></tr></thead>
             <tbody>
-              {items.map((it) => (
+              {visibleItems.map((it) => (
                 <tr key={it.id} className="border-t border-border">
-                  <td className="py-2">{it.name}</td>
+                  <td className="py-2 pr-4">{it.name}</td>
+                  {groups.map((g) => <td key={g.id} className="text-center">{canEdit ? <input type="checkbox" aria-label={`${it.name}: ${g.name}`} checked={it.group_id === g.id} disabled={busy} onChange={() => setGroup(it, it.group_id === g.id ? null : g.id)} /> : it.group_id === g.id ? "✓" : "—"}</td>)}
                   <td>{canEdit ? <input key={`${it.id}-${it.available}`} className={`${inp} w-24`} type="number" defaultValue={it.available} onBlur={(e) => Number(e.target.value) !== Number(it.available) && setQty(it, Number(e.target.value))} /> : it.available}</td>
                   <td>{it.unit}</td>
+                  <td className="max-w-48 truncate" title={it.note ?? ""}>{it.note || "—"}</td>
                   <td className="text-right">{canEdit && <button className={btn} onClick={() => delItem(it)}>Удалить</button>}</td>
                 </tr>
               ))}
-              {!items.length && <tr><td colSpan={4} className="py-6 text-center text-muted-foreground">Склад пуст</td></tr>}
+              {!visibleItems.length && <tr><td colSpan={groups.length + 5} className="py-6 text-center text-muted-foreground">{items.length ? "Ничего не найдено" : "Склад пуст"}</td></tr>}
             </tbody>
-          </table>
+          </table></div>
         </div>
       )}
 

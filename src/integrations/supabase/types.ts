@@ -299,10 +299,29 @@ export type Database = {
         }
         Relationships: []
       }
+      stock_groups: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       stock_items: {
         Row: {
           available: number
           created_at: string
+          group_id: string | null
           id: string
           name: string
           note: string | null
@@ -311,6 +330,7 @@ export type Database = {
         Insert: {
           available?: number
           created_at?: string
+          group_id?: string | null
           id?: string
           name: string
           note?: string | null
@@ -319,12 +339,21 @@ export type Database = {
         Update: {
           available?: number
           created_at?: string
+          group_id?: string | null
           id?: string
           name?: string
           note?: string | null
           unit?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "stock_items_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "stock_groups"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       stock_orders: {
         Row: {
