@@ -28,6 +28,7 @@ function ComponentsPage() {
   const [open, setOpen] = useState<Record<string, boolean>>({});
 
   const rows = product.components
+    .filter((c) => c.type !== "semi-product")
     .map((c) => {
       const units = componentUnitsAvailable(c);
       const availability = units >= summary.batchSize ? "full" : units > 0 ? "partial" : "none";
