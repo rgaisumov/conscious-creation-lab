@@ -194,7 +194,7 @@ export function normalizeRoute<T extends RouteDraft>(route: T): T {
   const replace = new Map<string, string[]>();
   const components: ComponentGroup[] = [];
   for (const c of route.components) {
-    if (c.type === "semi-product" || c.type === "fixture" || c.type === "assembly") {
+    if (c.type === "semi-product" || c.type === "fixture") {
       components.push(c);
       continue;
     }
