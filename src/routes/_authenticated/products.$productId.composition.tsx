@@ -94,8 +94,19 @@ function CompositionPage() {
     setQuery("");
   };
 
-  const setPositions = (g: ComponentGroup, positions: Position[]) =>
-    mutateRoute(target, (r) => R.updateComponent(r, g.id, { positions }));
+  /** Обновить строку спецификации: имя хранится в компоненте, данные — в его единственной записи. */
+  const updRow = (g: ComponentGroup, patch: Partial<Position> & { name?: string; unit?: string; type?: ComponentType; assemblyProductId?: string }) =>
+    mutateRoute(target, (r) => {
+      const { name, unit, type, assemblyProductId, ...pos } = patch;
+      const base = g.positions[0] ?? { id: uid(), name: g.name, quantityPerUnit: 1, stock: 0, leadTimeDays: 0 };
+      const cp: Partial<ComponentGroup> = {};
+      if (name !== undefined) cp.name = name;
+      if (unit !== undefined) cp.unit = unit;
+      if (type !== undefined) cp.type = type;
+      if (assemblyProductId !== undefined) cp.assemblyProductId = assemblyProductId || undefined;
+      const positions = type === "fixture" ? [] : [{ ...base, ...pos, name: name ?? base.name }];
+      return R.updateComponent(r, g.id, { ...cp, positions, ...(type === "fixture" ? { fixtureCount: g.fixtureCount ?? 1 } : {}) });
+    });
 
   const importExcel = async (file: File) => {
     const XLSX = await import("xlsx");
@@ -106,31 +117,30 @@ function CompositionPage() {
       return k ? String(row[k] ?? "").trim() : "";
     };
     mutateRoute(target, (r) => {
-      let next = r;
+      const added: ComponentGroup[] = [];
       for (const row of rows) {
-        const name = pick(row, "наимен", "позиц");
+        const name = pick(row, "наимен", "обознач");
         if (!name) continue;
-        const groupName = pick(row, "групп", "компонент") || "Импорт";
-        const type = TYPE_BY_TEXT[pick(row, "тип").toLowerCase()] ?? "material";
-        let g = next.components.find((c) => c.name === groupName && c.type !== "semi-product");
-        if (!g) {
-          next = R.addComponent(next, type);
-          const added = next.components[next.components.length - 1];
-          next = R.updateComponent(next, added.id, { name: groupName, positions: [] });
-          g = next.components.find((c) => c.id === added.id)!;
-        }
-        const pos: Position = {
-          id: uid(), name,
-          quantityPerUnit: Number(pick(row, "кол")) || 1,
-          stock: 0,
-          leadTimeDays: Number(pick(row, "срок")) || 0,
-          supplier: pick(row, "постав") || undefined,
-        };
-        next = R.updateComponent(next, g.id, { positions: [...g.positions, pos] });
+        const type = TYPE_BY_TEXT[pick(row, "тип", "раздел").toLowerCase()] ?? "material";
+        added.push({
+          id: uid(), name, type, unit: pick(row, "ед") || "шт",
+          fixtureCount: type === "fixture" ? Number(pick(row, "кол")) || 1 : undefined,
+          positions: type === "fixture" ? [] : [{
+            id: uid(), name,
+            quantityPerUnit: Number(pick(row, "кол")) || 1, stock: 0,
+            leadTimeDays: Number(pick(row, "срок")) || 0,
+            supplier: pick(row, "постав") || undefined,
+          }],
+        });
       }
-      return next;
+      return { ...r, components: [...r.components, ...added] };
     });
   };
+
+  const sorted = [...groups].sort(
+    (a, b) => COMPOSITION_TYPES.indexOf(a.type) - COMPOSITION_TYPES.indexOf(b.type) || a.name.localeCompare(b.name, "ru"),
+  );
+  const assemblyOptions = products.filter((p) => p.id !== productId);
 
   return (
     <div className="space-y-4">
@@ -156,7 +166,7 @@ function CompositionPage() {
                       return (
                         <button key={c.id} type="button" onClick={() => addExisting(c)}
                           className="block w-full rounded px-2 py-1 text-left text-xs hover:bg-accent">
-                          <span>{c.name} <span className="text-muted-foreground">· {c.positions.length} поз.</span></span>
+                          <span>{c.name}</span>
                           {usage.length > 0 && (
                             <span className="block text-[10px] text-muted-foreground"
                               title={`Уже используется в изделиях: ${usage.join(", ")}`}>
@@ -172,7 +182,7 @@ function CompositionPage() {
                     + Создать новый
                   </button>
                   <p className="mt-1 px-2 text-[10px] leading-snug text-muted-foreground">
-                    Компоненты копируются, а не ссылаются: изменение позиций в одном изделии не меняет их в других.
+                    Компоненты копируются, а не ссылаются: изменение строки в одном изделии не меняет их в других.
                   </p>
                 </div>
               </>
@@ -190,73 +200,95 @@ function CompositionPage() {
       {showImportInfo && <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/70 p-4" onClick={() => setShowImportInfo(false)}>
         <div role="dialog" aria-modal="true" aria-label="Формат файла Excel" className="w-full max-w-lg space-y-3 rounded-md border border-border bg-card p-5 shadow-lg" onClick={(e) => e.stopPropagation()}>
           <h2 className="text-lg font-semibold">Формат файла Excel</h2>
-          <p className="text-sm">Первая строка первого листа — заголовки столбцов. Каждая следующая строка — отдельная позиция. Поддерживаются .xlsx, .xls и .csv.</p>
+          <p className="text-sm">Первая строка первого листа — заголовки столбцов. Каждая следующая строка — отдельный компонент спецификации. Поддерживаются .xlsx, .xls и .csv.</p>
           <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr className="border-b border-border"><th className="py-1">Столбец</th><th>Что указать</th></tr></thead><tbody>
             <tr><td className="py-1 pr-3">Наименование</td><td>Название позиции; обязательно</td></tr>
-            <tr><td className="py-1 pr-3">Группа</td><td>Название группы; без него — «Импорт»</td></tr>
+            <tr><td className="py-1 pr-3">Ед. изм.</td><td>шт, г, м, компл; без него — шт</td></tr>
             <tr><td className="py-1 pr-3">Тип</td><td>Деталь, Сборочная единица, Стандартное изделие, Материал, ЭРИ, Упаковка или Оснастка; без него — Материал</td></tr>
             <tr><td className="py-1 pr-3">Кол-во на изделие</td><td>Число; без него — 1</td></tr>
             <tr><td className="py-1 pr-3">Поставщик</td><td>Необязательно</td></tr>
             <tr><td className="py-1 pr-3">Срок поставки (дн)</td><td>Число дней; без него — 0</td></tr>
           </tbody></table></div>
-          <p className="text-xs text-muted-foreground">Пример: Конденсаторы · ЭРИ · К10-17 · 4 · Поставщик А · 14. Позиции добавляются к текущему составу, существующие не удаляются.</p>
+          <p className="text-xs text-muted-foreground">Пример: К10-17 0,1 мкФ · ЭРИ · 4 · шт · Поставщик А · 14. Строки добавляются к текущему составу, существующие не удаляются.</p>
           <div className="flex justify-end"><Button type="button" size="sm" onClick={() => setShowImportInfo(false)}>Закрыть</Button></div>
         </div>
       </div>}
 
-      {groups.length === 0 && <p className="text-sm text-muted-foreground">Состав пока пуст.</p>}
-      {groups.map((g) => (
-        <div key={g.id} className="rounded-lg border border-border bg-card p-3">
-          <div className="flex items-center gap-2">
-            <input value={g.name} className={`${inp} flex-1 font-medium`}
-              onChange={(e) => mutateRoute(target, (r) => R.updateComponent(r, g.id, { name: e.target.value }))} />
-            {(() => {
-              const self = products.find((p) => p.id === productId)?.name;
-              const usage = (usageByComponent.get(`${g.type}|${g.name.trim().toLowerCase()}`) ?? []).filter((n) => n !== self);
-              if (usage.length === 0) return null;
-              return (
-                <span className="max-w-48 truncate text-[11px] text-muted-foreground"
-                  title={`Используется в изделиях: ${usage.join(", ")}`}>
-                  Используется в: {usage.join(", ")}
-                </span>
-              );
-            })()}
-            <select aria-label={`Тип группы ${g.name}`} className={inp} value={g.type}
-              onChange={(e) => mutateRoute(target, (r) => R.updateComponent(r, g.id, { type: e.target.value as ComponentType }))}>
-              {COMPOSITION_TYPES.map((t) => <option key={t} value={t}>{TYPE_LABEL[t]}</option>)}
-            </select>
-            <button type="button" aria-label="Удалить группу" onClick={() => mutateRoute(target, (r) => R.removeComponent(r, g.id))}
-              className="p-1 text-muted-foreground hover:text-status-block"><Trash2 className="h-3.5 w-3.5" /></button>
-          </div>
-          <table className="mt-2 w-full text-xs">
-            <thead className="text-[10px] uppercase text-muted-foreground">
-              <tr><th className="py-1 text-left font-medium">Наименование</th><th className="text-left font-medium">Кол-во на изд.</th>
-                <th className="text-left font-medium">Поставщик</th><th className="text-left font-medium">Срок, дн</th><th /></tr>
+      {groups.length === 0 ? <p className="text-sm text-muted-foreground">Состав пока пуст.</p> : (
+        <div className="overflow-auto rounded-md border border-border">
+          <table className="w-full text-xs">
+            <thead className="sticky top-0 bg-muted text-[10px] uppercase text-muted-foreground">
+              <tr className="text-left">
+                <th className="px-2 py-1 font-medium">Раздел</th>
+                <th className="px-2 py-1 font-medium">Наименование / обозначение</th>
+                <th className="px-2 py-1 font-medium">Кол-во</th>
+                <th className="px-2 py-1 font-medium">Ед.</th>
+                <th className="px-2 py-1 font-medium">Поставщик / узел</th>
+                <th className="px-2 py-1 font-medium">Срок, дн</th>
+                <th />
+              </tr>
             </thead>
             <tbody>
-              {g.positions.map((p) => {
-                const upd = (patch: Partial<Position>) =>
-                  setPositions(g, g.positions.map((x) => (x.id === p.id ? { ...x, ...patch } : x)));
+              {sorted.map((g) => {
+                const p = g.positions[0];
+                const self = products.find((x) => x.id === productId)?.name;
+                const usage = (usageByComponent.get(`${g.type}|${g.name.trim().toLowerCase()}`) ?? []).filter((n) => n !== self);
                 return (
-                  <tr key={p.id}>
-                    <td className="py-0.5 pr-2"><input value={p.name} onChange={(e) => upd({ name: e.target.value })} className={`${inp} w-full`} /></td>
-                    <td className="pr-2"><input type="number" min={0} value={p.quantityPerUnit} onChange={(e) => upd({ quantityPerUnit: Number(e.target.value) })} className={`${inp} w-20`} /></td>
-                    <td className="pr-2"><input value={p.supplier ?? ""} onChange={(e) => upd({ supplier: e.target.value })} className={`${inp} w-full`} /></td>
-                    <td className="pr-2"><input type="number" min={0} value={p.leadTimeDays} onChange={(e) => upd({ leadTimeDays: Number(e.target.value) })} className={`${inp} w-16`} /></td>
-                    <td><button type="button" aria-label="Удалить позицию" onClick={() => setPositions(g, g.positions.filter((x) => x.id !== p.id))}
-                      className="p-1 text-muted-foreground hover:text-status-block"><Trash2 className="h-3.5 w-3.5" /></button></td>
+                  <tr key={g.id} className="border-t border-border/60">
+                    <td className="px-1 py-0.5">
+                      <select aria-label={`Раздел ${g.name}`} className={`${inp} w-36`} value={g.type}
+                        onChange={(e) => updRow(g, { type: e.target.value as ComponentType })}>
+                        {COMPOSITION_TYPES.map((t) => <option key={t} value={t}>{TYPE_LABEL[t]}</option>)}
+                      </select>
+                    </td>
+                    <td className="px-1">
+                      <input value={g.name} onChange={(e) => updRow(g, { name: e.target.value })} className={`${inp} w-full`}
+                        title={usage.length ? `Используется также в: ${usage.join(", ")}` : undefined} />
+                    </td>
+                    <td className="px-1">
+                      {g.type === "fixture" ? (
+                        <input type="number" min={0} value={g.fixtureCount ?? 0} title="Оснастка не расходуется: количество в наличии"
+                          onChange={(e) => mutateRoute(target, (r) => R.updateComponent(r, g.id, { fixtureCount: Number(e.target.value) }))}
+                          className={`${inp} w-16`} />
+                      ) : (
+                        <input type="number" min={0} value={p?.quantityPerUnit ?? 1}
+                          onChange={(e) => updRow(g, { quantityPerUnit: Number(e.target.value) })} className={`${inp} w-16`} />
+                      )}
+                    </td>
+                    <td className="px-1">
+                      <input value={g.unit ?? "шт"} onChange={(e) => updRow(g, { unit: e.target.value })} className={`${inp} w-14`} />
+                    </td>
+                    <td className="px-1">
+                      {g.type === "assembly" ? (
+                        <select aria-label="Узел из базы" className={`${inp} w-full`} value={g.assemblyProductId ?? ""}
+                          onChange={(e) => updRow(g, { assemblyProductId: e.target.value })}>
+                          <option value="">— изготавливается / не привязана —</option>
+                          {assemblyOptions.map((x) => <option key={x.id} value={x.id}>{x.name} · {x.version}</option>)}
+                        </select>
+                      ) : g.type === "fixture" ? <span className="px-2 text-muted-foreground">—</span> : (
+                        <input value={p?.supplier ?? ""} onChange={(e) => updRow(g, { supplier: e.target.value })} className={`${inp} w-full`} />
+                      )}
+                    </td>
+                    <td className="px-1">
+                      {g.type !== "fixture" && (
+                        <input type="number" min={0} value={p?.leadTimeDays ?? 0}
+                          onChange={(e) => updRow(g, { leadTimeDays: Number(e.target.value) })} className={`${inp} w-14`} />
+                      )}
+                    </td>
+                    <td className="px-1">
+                      <button type="button" aria-label="Удалить строку" onClick={() => mutateRoute(target, (r) => R.removeComponent(r, g.id))}
+                        className="p-1 text-muted-foreground hover:text-status-block"><Trash2 className="h-3.5 w-3.5" /></button>
+                    </td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
-          <button type="button"
-            onClick={() => setPositions(g, [...g.positions, { id: uid(), name: "Новая позиция", quantityPerUnit: 1, stock: 0, leadTimeDays: 0 }])}
-            className="mt-2 inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-primary">
-            <Plus className="h-3 w-3" /> позиция
-          </button>
         </div>
-      ))}
+      )}
+      <p className="text-[11px] text-muted-foreground">
+        Составными могут быть только сборочные единицы: привяжите их к изделию из базы, чтобы её состав и маршрут велись отдельно.
+      </p>
     </div>
   );
 }

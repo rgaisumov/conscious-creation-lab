@@ -152,7 +152,8 @@ export function addComponent(route: RouteDraft, type: ComponentType): RouteDraft
     positions:
       type === "semi-product" || type === "fixture"
         ? []
-        : [{ id: uid("pos"), name: "Позиция 1", quantityPerUnit: 1, stock: 0, leadTimeDays: 14 }],
+        : [{ id: uid("pos"), name: label[type], quantityPerUnit: 1, stock: 0, leadTimeDays: 14 }],
+    unit: "шт",
     ...(type === "fixture" ? { fixtureCount: 1 } : {}),
   };
   return { ...route, components: [...route.components, c] };
@@ -183,4 +184,44 @@ export function removeComponent(route: RouteDraft, componentId: string): RouteDr
 
 export function cloneRoute(route: RouteDraft): RouteDraft {
   return JSON.parse(JSON.stringify(route)) as RouteDraft;
+}
+
+/**
+ * BOM-нормализация: каждый атомарный компонент — одна строка спецификации
+ * (ровно одна запись в positions). Группы с несколькими позициями
+ * разбиваются на отдельные компоненты; ссылки операций переносятся.
+ */
+export function normalizeRoute<T extends RouteDraft>(route: T): T {
+  const replace = new Map<string, string[]>();
+  const components: ComponentGroup[] = [];
+  for (const c of route.components) {
+    if (c.type === "semi-product" || c.type === "fixture") {
+      components.push(c);
+      continue;
+    }
+    if (c.positions.length <= 1) {
+      const p = c.positions[0];
+      components.push({
+        ...c,
+        positions: [p ? { ...p, name: c.name } : { id: uid("pos"), name: c.name, quantityPerUnit: 1, stock: 0, leadTimeDays: 0 }],
+      });
+      continue;
+    }
+    const ids: string[] = [];
+    c.positions.forEach((p, i) => {
+      const id = i === 0 ? c.id : uid("comp");
+      ids.push(id);
+      components.push({ ...c, id, name: p.name, positions: [{ ...p }] });
+    });
+    replace.set(c.id, ids);
+  }
+  if (replace.size === 0 && components.every((c, i) => c === route.components[i])) return route;
+  return {
+    ...route,
+    components,
+    operations: route.operations.map((o) => ({
+      ...o,
+      inputComponentIds: o.inputComponentIds.flatMap((id) => replace.get(id) ?? [id]),
+    })),
+  };
 }
