@@ -26,7 +26,8 @@ export function RouteEditor({ target }: { target: RouteTarget }) {
 
   const ops = R.sortedOps(route);
   const compById = new Map(route.components.map((c) => [c.id, c]));
-  const purchasable = route.components.filter((c) => c.type !== "semi-product");
+  const purchasable = route.components.filter((c) => c.type !== "semi-product" && c.type !== "fixture");
+  const fixtures = route.components.filter((c) => c.type === "fixture");
 
 
   const InsertRow = ({ index }: { index: number }) => (
@@ -212,9 +213,52 @@ export function RouteEditor({ target }: { target: RouteTarget }) {
                   );
                 })}
                 {purchasable.length === 0 && (
-                  <span className="text-xs text-muted-foreground">Компонентов пока нет</span>
+                  <span className="text-xs text-muted-foreground">Добавьте компоненты в разделе «Состав»</span>
                 )}
               </div>
+
+              {(() => {
+                const used = op.inputComponentIds.filter((id) => compById.get(id)?.type === "fixture");
+                return (
+                  <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        disabled={fixtures.length === 0}
+                        checked={used.length > 0}
+                        onChange={(e) =>
+                          mutateRoute(target, (r) =>
+                            e.target.checked
+                              ? R.toggleInput(r, op.id, fixtures[0].id)
+                              : used.reduce((acc, id) => R.toggleInput(acc, op.id, id), r),
+                          )
+                        }
+                      />
+                      использовать оснастку
+                    </label>
+                    {fixtures.length === 0 && <span className="text-[11px]">(оснастка не добавлена в «Составе»)</span>}
+                    {used.length > 0 &&
+                      fixtures.map((f) => {
+                        const on = used.includes(f.id);
+                        return (
+                          <button
+                            key={f.id}
+                            type="button"
+                            onClick={() => {
+                              if (on && used.length === 1) return;
+                              mutateRoute(target, (r) => R.toggleInput(r, op.id, f.id));
+                            }}
+                            className={`rounded-md border px-2 py-1 text-[11px] ${
+                              on ? "border-primary bg-primary/10 text-foreground" : "border-border hover:border-primary/40"
+                            }`}
+                          >
+                            {f.name}
+                          </button>
+                        );
+                      })}
+                  </div>
+                );
+              })()}
 
               {prev && (
                 <label className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
@@ -237,67 +281,6 @@ export function RouteEditor({ target }: { target: RouteTarget }) {
           </div>
         );
       })}
-
-      <ComponentsEditor target={target} />
-    </div>
-  );
-}
-
-export function ComponentsEditor({ target }: { target: RouteTarget }) {
-  const { getRoute, mutateRoute } = useProduction();
-  const route = getRoute(target);
-  if (!route) return null;
-  const list = route.components.filter((c) => c.type !== "semi-product");
-
-  return (
-    <div className="mt-4 rounded-lg border border-border bg-card/40 p-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-          Компоненты изделия
-        </span>
-        {COMPOSITION_TYPES.map((t) => (
-          <button
-            key={t}
-            type="button"
-            onClick={() => mutateRoute(target, (r) => R.addComponent(r, t))}
-            className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-0.5 text-[11px] text-muted-foreground hover:border-primary hover:text-primary"
-          >
-            <Plus className="h-3 w-3" /> {TYPE_LABEL[t]}
-          </button>
-        ))}
-      </div>
-
-      <div className="mt-2 space-y-1.5">
-        {list.map((c) => (
-          <div key={c.id} className="flex flex-wrap items-center gap-2">
-            <input
-              value={c.name}
-              onChange={(e) => mutateRoute(target, (r) => R.updateComponent(r, c.id, { name: e.target.value }))}
-              className="min-w-48 flex-1 rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground"
-            />
-            <select
-              value={c.type}
-              onChange={(e) =>
-                mutateRoute(target, (r) => R.updateComponent(r, c.id, { type: e.target.value as ComponentType }))
-              }
-              className="rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground"
-            >
-              <option value="material">Материал</option>
-              <option value="eri">ЭРИ</option>
-              <option value="fixture">Оснастка</option>
-            </select>
-            <button
-              type="button"
-              onClick={() => mutateRoute(target, (r) => R.removeComponent(r, c.id))}
-              className="rounded p-1 text-muted-foreground hover:text-status-block"
-              aria-label="Удалить компонент"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </button>
-          </div>
-        ))}
-        {list.length === 0 && <div className="text-xs text-muted-foreground">Компонентов пока нет</div>}
-      </div>
     </div>
   );
 }
