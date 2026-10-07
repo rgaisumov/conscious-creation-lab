@@ -22,6 +22,10 @@ export interface ComponentGroup {
   isShared?: boolean;
   fixtureCount?: number;
   producedByOperationId?: string | null;
+  /** Единица измерения (шт, г, м, компл). */
+  unit?: string;
+  /** Для сборочной единицы — ссылка на изделие (узел) из базы. */
+  assemblyProductId?: string;
   note?: string;
 }
 

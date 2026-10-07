@@ -13,7 +13,7 @@ import type { Permissions } from "./sections";
 import { supabase } from "@/integrations/supabase/client";
 
 import { computeSummary } from "./calculator";
-import { cloneRoute, type RouteDraft } from "./route-ops";
+import { cloneRoute, normalizeRoute, type RouteDraft } from "./route-ops";
 import type {
   Batch,
   Contract,
@@ -125,8 +125,10 @@ export function ProductionProvider({ children }: { children: ReactNode }) {
       try {
         const state = await loadState();
         if (cancelled) return;
-        setProducts(state.products);
-        setBatches(state.batches);
+        setProducts(state.products.map((p) => normalizeRoute(p)));
+        setBatches(
+          state.batches.map((b) => (b.routeOverride ? { ...b, routeOverride: normalizeRoute(b.routeOverride) } : b)),
+        );
         setContracts(state.contracts);
         setWorkcenters(state.workcenters);
         setTransfers(state.transfers);
