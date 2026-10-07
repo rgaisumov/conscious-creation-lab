@@ -152,7 +152,8 @@ export function addComponent(route: RouteDraft, type: ComponentType): RouteDraft
     positions:
       type === "semi-product" || type === "fixture"
         ? []
-        : [{ id: uid("pos"), name: "Позиция 1", quantityPerUnit: 1, stock: 0, leadTimeDays: 14 }],
+        : [{ id: uid("pos"), name: label[type], quantityPerUnit: 1, stock: 0, leadTimeDays: 14 }],
+    unit: "шт",
     ...(type === "fixture" ? { fixtureCount: 1 } : {}),
   };
   return { ...route, components: [...route.components, c] };
