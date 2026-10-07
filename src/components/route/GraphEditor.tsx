@@ -1,7 +1,7 @@
 import { Plus, Trash2, X } from "lucide-react";
 import { useProduction, type RouteTarget } from "@/lib/production/store";
 import * as R from "@/lib/production/route-ops";
-import { TYPE_LABEL, ComponentsEditor } from "./RouteEditor";
+import { TYPE_LABEL } from "./RouteEditor";
 
 /**
  * Graph editor — same model as the route editor, but arranged as
@@ -156,8 +156,6 @@ export function GraphEditor({ target }: { target: RouteTarget }) {
           <Plus className="h-3 w-3" /> операция в конец
         </button>
       </div>
-
-      <ComponentsEditor target={target} />
     </div>
   );
 }
